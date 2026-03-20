@@ -53,7 +53,7 @@ CREATE TABLE samochody (
     id                   SERIAL PRIMARY KEY,
     uzytkownik_id        INT NOT NULL REFERENCES uzytkownicy(id) ON DELETE CASCADE,
     vin                  VARCHAR(17) UNIQUE,
-    numer_rejestracyjny  VARCHAR(20) NOT NULL,
+    numer_rejestracyjny  VARCHAR(20) NOT NULL UNIQUE,
     marka                VARCHAR(100) NOT NULL,
     model                VARCHAR(100) NOT NULL,
     rok_produkcji        INT,
@@ -309,6 +309,9 @@ CREATE INDEX idx_powiadomienia_email_uzytkownik
 
 CREATE INDEX idx_powiadomienia_email_status
     ON powiadomienia_email(status);
+
+CREATE INDEX idx_zadania_serwisowe_nazwa
+    ON zadania_serwisowe(nazwa_zadania);
 
 -- ============================================================
 -- 14. WIDOK Z KOSZTEM CAŁKOWITYM SERWISU
