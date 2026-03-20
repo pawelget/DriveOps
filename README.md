@@ -12,7 +12,7 @@
 
 ## Dane logowania
 - user: postgres
-- password: chuj123
+- password: admin
 - database: CarManagementDB
 - port: 5432
 
@@ -22,4 +22,4 @@ Np. pgAdmin:
 - port: 5432
 - database: CarManagementDB
 - user: postgres
-- password: chuj123
+- password: admin
