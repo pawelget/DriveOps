@@ -1,4 +1,4 @@
-<img width="1536" height="1024" alt="Image" src="https://github.com/user-attachments/assets/6eeb6e78-bdb9-42df-b374-cafbd92d38b4" />
+<img width="1536" height="1024" alt="Image" src="https://github.com/user-attachments/assets/ffc3cb76-4480-48bd-ac34-6b26db392548" />
 
 ## Jak uruchomić
 1. Sklonuj repo:
