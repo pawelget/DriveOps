@@ -1,19 +1,10 @@
--- ============================================================
--- PORTAL DO ZARZĄDZANIA SAMOCHODEM - PostgreSQL
--- Wersja spójna i poprawiona
--- ============================================================
-
--- ============================================================
--- 1. TYPY ENUM
--- ============================================================
 CREATE TYPE status_powiadomienia AS ENUM ('oczekujace', 'wyslane', 'blad');
 CREATE TYPE wynik_przegladu AS ENUM ('pozytywny', 'negatywny');
 CREATE TYPE status_wpisu AS ENUM ('w_toku', 'zakonczony', 'anulowany');
 CREATE TYPE rodzaj_paliwa AS ENUM ('benzyna', 'diesel', 'elektryczny', 'hybryda', 'benzyna_gaz');
 
--- ============================================================
--- 2. FUNKCJA DO AUTO-AKTUALIZACJI zaktualizowano_w
--- ============================================================
+-- funkcja do autoakualizacji - zaktualizowano_w
+
 CREATE OR REPLACE FUNCTION ustaw_zaktualizowano_w()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -22,9 +13,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- ============================================================
--- 3. TABELA: uzytkownicy
--- ============================================================
+
 CREATE TABLE uzytkownicy (
     id                SERIAL PRIMARY KEY,
     imie              VARCHAR(100) NOT NULL,
@@ -45,10 +34,7 @@ BEFORE UPDATE ON uzytkownicy
 FOR EACH ROW
 EXECUTE FUNCTION ustaw_zaktualizowano_w();
 
--- ============================================================
--- 4. TABELA: samochody
--- Jeden użytkownik może mieć wiele samochodów
--- ============================================================
+
 CREATE TABLE samochody (
     id                   SERIAL PRIMARY KEY,
     uzytkownik_id        INT NOT NULL REFERENCES uzytkownicy(id) ON DELETE CASCADE,
@@ -89,9 +75,7 @@ BEFORE UPDATE ON samochody
 FOR EACH ROW
 EXECUTE FUNCTION ustaw_zaktualizowano_w();
 
--- ============================================================
--- 5. TABELA SŁOWNIKOWA: rodzaje_serwisu
--- ============================================================
+
 CREATE TABLE rodzaje_serwisu (
     id                SERIAL PRIMARY KEY,
     nazwa             VARCHAR(100) NOT NULL UNIQUE,
@@ -105,10 +89,7 @@ BEFORE UPDATE ON rodzaje_serwisu
 FOR EACH ROW
 EXECUTE FUNCTION ustaw_zaktualizowano_w();
 
--- ============================================================
--- 6. TABELA: wpisy_serwisowe
--- Główny wpis o naprawie / serwisie
--- ============================================================
+
 CREATE TABLE wpisy_serwisowe (
     id                       SERIAL PRIMARY KEY,
     samochod_id              INT NOT NULL REFERENCES samochody(id) ON DELETE CASCADE,
@@ -139,10 +120,7 @@ BEFORE UPDATE ON wpisy_serwisowe
 FOR EACH ROW
 EXECUTE FUNCTION ustaw_zaktualizowano_w();
 
--- ============================================================
--- 7. TABELA: zadania_serwisowe
--- Poszczególne czynności w ramach wpisu
--- ============================================================
+
 CREATE TABLE zadania_serwisowe (
     id                SERIAL PRIMARY KEY,
     wpis_serwisowy_id INT NOT NULL REFERENCES wpisy_serwisowe(id) ON DELETE CASCADE,
@@ -154,10 +132,7 @@ CREATE TABLE zadania_serwisowe (
         CHECK (koszt_robocizny >= 0)
 );
 
--- ============================================================
--- 8. TABELA: czesci
--- Katalog części
--- ============================================================
+
 CREATE TABLE czesci (
     id                SERIAL PRIMARY KEY,
     nazwa             VARCHAR(255) NOT NULL,
@@ -174,11 +149,7 @@ BEFORE UPDATE ON czesci
 FOR EACH ROW
 EXECUTE FUNCTION ustaw_zaktualizowano_w();
 
--- ============================================================
--- 9. TABELA: uzyte_czesci
--- Części użyte w danym wpisie serwisowym
--- Jedna część tylko raz w ramach jednego wpisu
--- ============================================================
+
 CREATE TABLE uzyte_czesci (
     id                SERIAL PRIMARY KEY,
     wpis_serwisowy_id INT NOT NULL REFERENCES wpisy_serwisowe(id) ON DELETE CASCADE,
@@ -195,10 +166,7 @@ CREATE TABLE uzyte_czesci (
     CONSTRAINT uq_uzyte_czesci UNIQUE (wpis_serwisowy_id, czesc_id)
 );
 
--- ============================================================
--- 10. TABELA: przeglady_techniczne
--- Osobna tabela dla przeglądów technicznych
--- ============================================================
+
 CREATE TABLE przeglady_techniczne (
     id                SERIAL PRIMARY KEY,
     samochod_id       INT NOT NULL REFERENCES samochody(id) ON DELETE CASCADE,
@@ -223,10 +191,7 @@ BEFORE UPDATE ON przeglady_techniczne
 FOR EACH ROW
 EXECUTE FUNCTION ustaw_zaktualizowano_w();
 
--- ============================================================
--- 11. TABELA: raporty
--- Jeden raport dla jednego wpisu serwisowego
--- ============================================================
+
 CREATE TABLE raporty (
     id                SERIAL PRIMARY KEY,
     wpis_serwisowy_id INT NOT NULL UNIQUE REFERENCES wpisy_serwisowe(id) ON DELETE CASCADE,
@@ -235,13 +200,7 @@ CREATE TABLE raporty (
     wygenerowano_w    TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
--- ============================================================
--- 12. TABELA: powiadomienia_email
--- Obsługuje:
--- - wysyłkę raportu
--- - przypomnienie o przeglądzie
--- Dokładnie jedno z pól raport_id / przeglad_id musi być uzupełnione
--- ============================================================
+
 CREATE TABLE powiadomienia_email (
     id                SERIAL PRIMARY KEY,
     uzytkownik_id     INT NOT NULL REFERENCES uzytkownicy(id) ON DELETE CASCADE,
@@ -271,9 +230,7 @@ CREATE TABLE powiadomienia_email (
         CHECK (wyslano_w IS NULL OR wyslano_w >= utworzono_w)
 );
 
--- ============================================================
--- 13. INDEKSY
--- ============================================================
+
 CREATE INDEX idx_samochody_uzytkownik
     ON samochody(uzytkownik_id);
 
@@ -313,10 +270,8 @@ CREATE INDEX idx_powiadomienia_email_status
 CREATE INDEX idx_zadania_serwisowe_nazwa
     ON zadania_serwisowe(nazwa_zadania);
 
--- ============================================================
--- 14. WIDOK Z KOSZTEM CAŁKOWITYM SERWISU
--- Nie trzymamy kosztu jako redundantnej kolumny
--- ============================================================
+-- WIDOK Z KOSZTEM CAŁKOWITYM SERWISU
+-- nie ma kosztu jako redundantnej kolumny
 CREATE VIEW v_wpisy_serwisowe_z_kosztem AS
 SELECT
     ws.id,
@@ -349,32 +304,10 @@ LEFT JOIN (
     GROUP BY wpis_serwisowy_id
 ) c ON ws.id = c.wpis_serwisowy_id;
 
--- ============================================================
--- 15. DANE SŁOWNIKOWE PRZYKŁADOWE
--- ============================================================
+-- przykładowe rodzaje serwisu
 INSERT INTO rodzaje_serwisu (nazwa, opis) VALUES
 ('Wymiana oleju', 'Wymiana oleju silnikowego i filtra oleju'),
 ('Wymiana hamulcow', 'Serwis ukladu hamulcowego'),
 ('Przeglad okresowy', 'Okresowy przeglad eksploatacyjny'),
 ('Diagnostyka', 'Diagnostyka komputerowa'),
 ('Naprawa zawieszenia', 'Naprawa elementow zawieszenia');
-
--- ============================================================
--- 16. PRZYKŁADOWE ZAPYTANIA
--- ============================================================
-
--- Historia serwisowa danego auta:
--- SELECT * FROM v_wpisy_serwisowe_z_kosztem WHERE samochod_id = 1 ORDER BY data_serwisu DESC;
-
--- Wyszukanie wpisów po czynności, np. "klocki":
--- SELECT ws.*
--- FROM wpisy_serwisowe ws
--- JOIN zadania_serwisowe zs ON zs.wpis_serwisowy_id = ws.id
--- WHERE LOWER(zs.nazwa_zadania) LIKE LOWER('%klocki%');
-
--- Wyszukanie wpisów po dacie, warsztacie i koszcie:
--- SELECT *
--- FROM v_wpisy_serwisowe_z_kosztem
--- WHERE data_serwisu BETWEEN '2024-01-01' AND '2024-12-31'
---   AND nazwa_warsztatu ILIKE '%bosch%'
---   AND calkowity_koszt >= 500;
