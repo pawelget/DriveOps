@@ -23,3 +23,13 @@ Np. pgAdmin:
 - database: CarManagementDB
 - user: postgres
 - password: admin
+
+## Dodanie przykładowego użytkownika (w Query Tool)
+INSERT INTO uzytkownicy (imie, nazwisko, email, haslo_hash, telefon)
+VALUES (
+    'Jan',
+    'Kowalski',
+    'jan@example.com',
+    'haslo123',
+    '123456789'
+);
