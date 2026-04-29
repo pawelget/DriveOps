@@ -93,3 +93,121 @@ button:disabled {
   background: #eef3ff;
   color: #1d3f8b;
 }
+
+.success-button {
+  background: #19a34a;
+  color: white;
+  transform: scale(1.05);
+  transition: all 0.3s ease;
+}
+
+
+
+.login-animation-wrapper {
+  position: relative;
+  overflow: hidden;
+  min-height: 360px;
+}
+
+.login-card {
+  position: relative;
+  z-index: 2;
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+.hide-login-card {
+  opacity: 0;
+  transform: scale(0.95);
+  pointer-events: none;
+}
+
+.login-submit-button {
+  width: 130px;
+  height: 42px;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  margin: 20px auto 0 auto;
+  background: #222;
+  color: white;
+  border-radius: 8px;
+  transition: background 0.3s ease, transform 0.25s ease;
+}
+
+.login-submit-button:disabled {
+  opacity: 1;
+  cursor: not-allowed;
+}
+
+.loading-button {
+  background: #222;
+}
+
+.success-button {
+  background: #19a34a;
+  transform: scale(1.05);
+}
+
+.button-loader {
+  width: 18px;
+  height: 18px;
+  border: 3px solid rgba(255, 255, 255, 0.35);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spinLoader 0.8s linear infinite;
+}
+
+.button-check {
+  font-size: 24px;
+  font-weight: bold;
+  line-height: 1;
+  animation: checkPop 0.3s ease;
+}
+
+@keyframes spinLoader {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes checkPop {
+  0% {
+    transform: scale(0.4);
+    opacity: 0;
+  }
+
+  70% {
+    transform: scale(1.25);
+    opacity: 1;
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+.login-car {
+  position: fixed;
+  left: 50px;
+  bottom: 500px;
+  width: 500px;
+  z-index: 9998;
+  transition: transform 2.2s cubic-bezier(0.6, 0.01, 0.9, 0.35);
+}
+
+.login-car.drive {
+  transform: translateX(calc(100vw + 600px));
+}
+
+.smoke-canvas {
+  position: fixed;
+  left: -150px;
+  bottom: 600px;
+  z-index: 10000;
+  pointer-events: none;
+  transition: transform 2.2s cubic-bezier(0.6, 0.01, 0.9, 0.35);
+}
+
+.smoke-canvas.driving {
+  transform: translateX(calc(100vw + 600px));
+}

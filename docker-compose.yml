@@ -10,4 +10,4 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - ./CarManagementDB.sql:/docker-entrypoint-initdb.d/CarManagementDB.sql
+      - ./database/CarManagementDB.sql:/docker-entrypoint-initdb.d/CarManagementDB.sql
