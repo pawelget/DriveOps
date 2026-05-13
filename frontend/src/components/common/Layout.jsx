@@ -1,11 +1,20 @@
-import Navbar from "./Navbar";
+import Sidebar from "./Sidebar"; // upewnij się, że ścieżka jest poprawna
 
-function Layout({ children }) {
+function Layout({ children, onNavigate }) {
   return (
-    <>
-      <Navbar />
-      <main className="container">{children}</main>
-    </>
+    <div className="dashboard-layout">
+      {/* Sidebar jest teraz stałym elementem układu po lewej stronie */}
+      <Sidebar 
+        onNavigate={onNavigate} 
+        userName="Jan Kowalski" 
+        userRole="Admin" 
+      />
+      
+      {/* Główna treść strony (HomePage, Profil itp.) wyświetli się tutaj */}
+      <main className="dashboard-content">
+        {children}
+      </main>
+    </div>
   );
 }
 
