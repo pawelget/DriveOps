@@ -1,39 +1,40 @@
 import os
-from contextlib import contextmanager
 
-import psycopg2
-from psycopg2.extras import RealDictCursor
 from dotenv import load_dotenv
+
+from sqlalchemy import create_engine
+
+from sqlalchemy.orm import (
+    declarative_base,
+    sessionmaker
+)
 
 load_dotenv()
 
-def get_connection():
-    return psycopg2.connect(
-        host=os.getenv("DB_HOST", "localhost"),
-        port=int(os.getenv("DB_PORT", "5432")),
-        dbname=os.getenv("DB_NAME", "CarManagementDB"),
-        user=os.getenv("DB_USER", "postgres"),
-        password=os.getenv("DB_PASSWORD", "admin"),
-        cursor_factory=RealDictCursor,
-    )
+DB_HOST = os.getenv("DB_HOST", "localhost")
 
+DB_PORT = os.getenv("DB_PORT", "5432")
 
-@contextmanager
-def get_cursor(commit: bool = False):
-    conn = None
-    cur = None
-    try:
-        conn = get_connection()
-        cur = conn.cursor()
-        yield cur
-        if commit:
-            conn.commit()
-    except Exception:
-        if conn:
-            conn.rollback()
-        raise
-    finally:
-        if cur:
-            cur.close()
-        if conn:
-            conn.close()
+DB_NAME = os.getenv("DB_NAME", "CarManagementDB")
+
+DB_USER = os.getenv("DB_USER", "postgres")
+
+DB_PASSWORD = os.getenv("DB_PASSWORD", "admin")
+
+DATABASE_URL = (
+    f"postgresql+psycopg2://"
+    f"{DB_USER}:{DB_PASSWORD}"
+    f"@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+)
+
+engine = create_engine(
+    DATABASE_URL
+)
+
+SessionLocal = sessionmaker(
+    autocommit=False,
+    autoflush=False,
+    bind=engine
+)
+
+Base = declarative_base()
