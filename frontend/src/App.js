@@ -7,6 +7,7 @@ import HomePage from "./components/pages/HomePage.jsx";
 import LoginPage from "./components/pages/LoginPage.jsx";
 import RegisterPage from "./components/pages/RegisterPage.jsx";
 import ProfilePage from "./components/pages/ProfilePage.jsx";
+import SettingsPage from "./components/pages/SettingsPage.jsx";
 
 function App() {
   const navigate = useNavigate();
@@ -58,6 +59,7 @@ function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/profil" element={<ProfilePage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="/ustawienia" element={<SettingsPage />} />
       </Routes>
     </Layout>
   );

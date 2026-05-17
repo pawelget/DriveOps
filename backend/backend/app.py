@@ -412,6 +412,237 @@ def me():
     finally:
         db.close()
 
+# =========================
+# AUTH UPDATE ME
+# =========================
+
+@app.route("/auth/me", methods=["PATCH"])
+@token_required
+def update_me():
+
+    db = SessionLocal()
+
+    user_id = request.user["user_id"]
+
+    data = request.get_json(silent=True) or {}
+
+    try:
+
+        user = (
+            db.query(Uzytkownik)
+            .filter(Uzytkownik.id == user_id)
+            .first()
+        )
+
+        if not user:
+            return jsonify({
+                "error": "Uzytkownik nie istnieje"
+            }), 404
+
+        if "imie" in data:
+            imie = (data.get("imie") or "").strip()
+
+            if not imie:
+                return jsonify({
+                    "error": "Imie nie moze byc puste"
+                }), 400
+
+            user.imie = imie
+
+        if "nazwisko" in data:
+            nazwisko = (data.get("nazwisko") or "").strip()
+
+            if not nazwisko:
+                return jsonify({
+                    "error": "Nazwisko nie moze byc puste"
+                }), 400
+
+            user.nazwisko = nazwisko
+
+        if "email" in data:
+            email = (data.get("email") or "").strip().lower()
+
+            if not email:
+                return jsonify({
+                    "error": "Email nie moze byc pusty"
+                }), 400
+
+            if email != user.email:
+
+                existing = (
+                    db.query(Uzytkownik)
+                    .filter(Uzytkownik.email == email)
+                    .first()
+                )
+
+                if existing:
+                    return jsonify({
+                        "error": "Email jest juz zajety"
+                    }), 409
+
+                user.email = email
+
+        if "telefon" in data:
+            telefon = (data.get("telefon") or "").strip() or None
+
+            user.telefon = telefon
+
+        user.zaktualizowano_w = datetime.datetime.utcnow()
+
+        db.commit()
+
+        db.refresh(user)
+
+        return jsonify({
+            "message": "Dane zaktualizowane",
+            "user": user_to_dict(user)
+        }), 200
+
+    except Exception as e:
+
+        db.rollback()
+
+        return jsonify({
+            "error": str(e)
+        }), 500
+
+    finally:
+        db.close()
+
+
+# =========================
+# AUTH CHANGE PASSWORD
+# =========================
+
+@app.route("/auth/change-password", methods=["POST"])
+@token_required
+def change_password():
+
+    db = SessionLocal()
+
+    user_id = request.user["user_id"]
+
+    data = request.get_json(silent=True) or {}
+
+    obecne_haslo = data.get("obecne_haslo") or ""
+
+    nowe_haslo = data.get("nowe_haslo") or ""
+
+    if not obecne_haslo or not nowe_haslo:
+        return jsonify({
+            "error": "Wymagane pola: obecne_haslo, nowe_haslo"
+        }), 400
+
+    if len(nowe_haslo) < 6:
+        return jsonify({
+            "error": "Nowe haslo musi miec co najmniej 6 znakow"
+        }), 400
+
+    if obecne_haslo == nowe_haslo:
+        return jsonify({
+            "error": "Nowe haslo musi byc rozne od obecnego"
+        }), 400
+
+    try:
+
+        user = (
+            db.query(Uzytkownik)
+            .filter(Uzytkownik.id == user_id)
+            .first()
+        )
+
+        if not user:
+            return jsonify({
+                "error": "Uzytkownik nie istnieje"
+            }), 404
+
+        if not verify_password(obecne_haslo, user.haslo_hash):
+            return jsonify({
+                "error": "Obecne haslo jest nieprawidlowe"
+            }), 401
+
+        user.haslo_hash = hash_password(nowe_haslo)
+
+        user.zaktualizowano_w = datetime.datetime.utcnow()
+
+        db.commit()
+
+        return jsonify({
+            "message": "Haslo zostalo zmienione"
+        }), 200
+
+    except Exception as e:
+
+        db.rollback()
+
+        return jsonify({
+            "error": str(e)
+        }), 500
+
+    finally:
+        db.close()
+
+
+# =========================
+# AUTH DEACTIVATE
+# =========================
+
+@app.route("/auth/deactivate", methods=["POST"])
+@token_required
+def deactivate_account():
+
+    db = SessionLocal()
+
+    user_id = request.user["user_id"]
+
+    data = request.get_json(silent=True) or {}
+
+    haslo = data.get("haslo") or ""
+
+    if not haslo:
+        return jsonify({
+            "error": "Wymagane pole: haslo"
+        }), 400
+
+    try:
+
+        user = (
+            db.query(Uzytkownik)
+            .filter(Uzytkownik.id == user_id)
+            .first()
+        )
+
+        if not user:
+            return jsonify({
+                "error": "Uzytkownik nie istnieje"
+            }), 404
+
+        if not verify_password(haslo, user.haslo_hash):
+            return jsonify({
+                "error": "Nieprawidlowe haslo"
+            }), 401
+
+        user.czy_aktywny = False
+
+        user.zaktualizowano_w = datetime.datetime.utcnow()
+
+        db.commit()
+
+        return jsonify({
+            "message": "Konto zostalo dezaktywowane"
+        }), 200
+
+    except Exception as e:
+
+        db.rollback()
+
+        return jsonify({
+            "error": str(e)
+        }), 500
+
+    finally:
+        db.close()
+
 
 # =========================
 # UZYTKOWNICY
