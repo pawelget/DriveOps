@@ -1,6 +1,8 @@
 import { useState } from "react";
 import "./Sidebar.css";
 import { removeToken } from "../../utils/token.jsx";
+import { useEffect } from "react";
+import { getAlerts } from "../../api/AlertsApi";
 
 // ── Icons ──────────────────────────────────────────────
 const Icon = ({ d, size = 18 }) => (
@@ -77,6 +79,46 @@ export default function Sidebar({ active: activeProp, onNavigate, userName = "U�
   const [active, setActive]     = useState(activeProp || "dashboard");
   const [expanded, setExpanded] = useState({ routes: true });
   const [collapsed, setCollapsed] = useState(false);
+
+  const [alertsCount, setAlertsCount] = useState(0);
+
+useEffect(() => {
+  async function loadCount() {
+    try {
+      const data = await getAlerts();
+      setAlertsCount(data.total);
+    } catch (err) {
+      console.error("Nie udalo sie pobrac liczby alertow:", err);
+    }
+  }
+  loadCount();
+}, []);
+
+const NAV = [
+  {
+    section: "Główne",
+    items: [
+      { id: "dashboard", label: "Dashboard" },
+      { id: "drives",    label: "Pojazdy" },
+      { id: "routes",    label: "Trasy",
+        children: [
+          { id: "routes-active",   label: "Aktywne" },
+          { id: "routes-history",  label: "Historia" },
+          { id: "routes-planned",  label: "Planowane" },
+        ]
+      },
+      { id: "drivers",   label: "Kierowcy" },
+    ]
+  },
+  {
+    section: "Zarządzanie",
+    items: [
+      { id: "reports",  label: "Raporty", badge: 2 },
+      { id: "alerts",   label: "Alerty",  badge: alertsCount || null },
+      { id: "settings", label: "Ustawienia" },
+    ]
+  }
+];
 
   const navigate = (id) => {
     setActive(id);

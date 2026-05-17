@@ -6,8 +6,10 @@ import Layout from "./components/common/Layout";
 import HomePage from "./components/pages/HomePage.jsx";
 import LoginPage from "./components/pages/LoginPage.jsx";
 import RegisterPage from "./components/pages/RegisterPage.jsx";
+import AlertsPage from "./components/pages/AlertsPage.jsx";
 import ProfilePage from "./components/pages/ProfilePage.jsx";
 import SettingsPage from "./components/pages/SettingsPage.jsx";
+import CarsPage from "./components/pages/CarsPage.jsx";
 
 function App() {
   const navigate = useNavigate();
@@ -30,6 +32,8 @@ function App() {
       case "drivers": navigate("/kierowcy"); break;
       case "settings": navigate("/ustawienia"); break;
       case "profile": navigate("/profil"); break;
+      case "drives": navigate("/pojazdy"); break;
+      case "alerts": navigate("/alerty"); break;
       default: console.log(id);
     }
   };
@@ -60,6 +64,8 @@ function App() {
         <Route path="/profil" element={<ProfilePage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
         <Route path="/ustawienia" element={<SettingsPage />} />
+        <Route path="/alerty" element={<AlertsPage />} />
+        <Route path="/pojazdy" element={<CarsPage />} />
       </Routes>
     </Layout>
   );

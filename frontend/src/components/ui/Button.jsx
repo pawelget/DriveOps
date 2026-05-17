@@ -1,6 +1,17 @@
-function Button({ children, className = "", type = "button", disabled = false }) {
+function Button({
+  children,
+  className = "",
+  type = "button",
+  disabled = false,
+  onClick,
+}) {
   return (
-    <button className={className} type={type} disabled={disabled}>
+    <button
+      className={className}
+      type={type}
+      disabled={disabled}
+      onClick={onClick}
+    >
       {children}
     </button>
   );

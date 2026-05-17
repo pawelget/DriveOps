@@ -643,6 +643,242 @@ def deactivate_account():
     finally:
         db.close()
 
+# =========================
+# ALERTY
+# =========================
+
+@app.route("/alerts", methods=["GET"])
+@token_required
+def get_alerts():
+
+    db = SessionLocal()
+
+    typ_filter = request.args.get("typ")
+
+    priorytet_filter = request.args.get("priorytet")
+
+    try:
+
+        today = datetime.date.today()
+
+        soon_30 = today + datetime.timedelta(days=30)
+
+        soon_14 = today + datetime.timedelta(days=14)
+
+        alerts = []
+
+        # 1) Przeglady wygasle
+        wygasle = (
+            db.query(PrzegladTechniczny)
+            .filter(PrzegladTechniczny.data_waznosci < today)
+            .all()
+        )
+
+        for p in wygasle:
+
+            car = p.samochod
+
+            alerts.append({
+                "id": f"przeglad-wygasly-{p.id}",
+                "typ": "przeglad",
+                "priorytet": "critical",
+                "tytul": "Przeglad techniczny wygasl",
+                "opis": (
+                    f"Auto {car.marka} {car.model} "
+                    f"({car.numer_rejestracyjny}) ma wygasly przeglad "
+                    f"od {p.data_waznosci.isoformat()}"
+                ),
+                "data": p.data_waznosci.isoformat(),
+                "samochod_id": car.id,
+                "samochod_info": (
+                    f"{car.marka} {car.model} "
+                    f"({car.numer_rejestracyjny})"
+                )
+            })
+
+        # 2) Przeglady wygasajace w ciagu 30 dni
+        wygasajace = (
+            db.query(PrzegladTechniczny)
+            .filter(PrzegladTechniczny.data_waznosci >= today)
+            .filter(PrzegladTechniczny.data_waznosci <= soon_30)
+            .all()
+        )
+
+        for p in wygasajace:
+
+            car = p.samochod
+
+            dni = (p.data_waznosci - today).days
+
+            priorytet = "critical" if dni <= 7 else "warning"
+
+            alerts.append({
+                "id": f"przeglad-konczacy-{p.id}",
+                "typ": "przeglad",
+                "priorytet": priorytet,
+                "tytul": f"Przeglad konczy sie za {dni} dni",
+                "opis": (
+                    f"Auto {car.marka} {car.model} "
+                    f"({car.numer_rejestracyjny}) - przeglad wazny do "
+                    f"{p.data_waznosci.isoformat()}"
+                ),
+                "data": p.data_waznosci.isoformat(),
+                "samochod_id": car.id,
+                "samochod_info": (
+                    f"{car.marka} {car.model} "
+                    f"({car.numer_rejestracyjny})"
+                )
+            })
+
+        # 3) Przeglady z wynikiem negatywnym
+        negatywne = (
+            db.query(PrzegladTechniczny)
+            .filter(PrzegladTechniczny.wynik == "negatywny")
+            .all()
+        )
+
+        for p in negatywne:
+
+            car = p.samochod
+
+            alerts.append({
+                "id": f"przeglad-negatywny-{p.id}",
+                "typ": "przeglad",
+                "priorytet": "critical",
+                "tytul": "Negatywny wynik przegladu",
+                "opis": (
+                    f"Auto {car.marka} {car.model} "
+                    f"({car.numer_rejestracyjny}) nie przeszlo przegladu "
+                    f"({p.data_wykonania.isoformat()})"
+                ),
+                "data": p.data_wykonania.isoformat(),
+                "samochod_id": car.id,
+                "samochod_info": (
+                    f"{car.marka} {car.model} "
+                    f"({car.numer_rejestracyjny})"
+                )
+            })
+
+        # 4) Nadchodzace serwisy (w ciagu 14 dni)
+        nadchodzace_serwisy = (
+            db.query(WpisSerwisowy)
+            .filter(WpisSerwisowy.nastepna_data_serwisu != None)
+            .filter(WpisSerwisowy.nastepna_data_serwisu >= today)
+            .filter(WpisSerwisowy.nastepna_data_serwisu <= soon_14)
+            .all()
+        )
+
+        for w in nadchodzace_serwisy:
+
+            car = w.samochod
+
+            dni = (w.nastepna_data_serwisu - today).days
+
+            priorytet = "warning" if dni <= 7 else "info"
+
+            alerts.append({
+                "id": f"serwis-nadchodzacy-{w.id}",
+                "typ": "serwis",
+                "priorytet": priorytet,
+                "tytul": f"Serwis za {dni} dni",
+                "opis": (
+                    f"Auto {car.marka} {car.model} "
+                    f"({car.numer_rejestracyjny}) - planowany serwis "
+                    f"{w.nastepna_data_serwisu.isoformat()}"
+                ),
+                "data": w.nastepna_data_serwisu.isoformat(),
+                "samochod_id": car.id,
+                "samochod_info": (
+                    f"{car.marka} {car.model} "
+                    f"({car.numer_rejestracyjny})"
+                )
+            })
+
+        # 5) Zalegle serwisy (w toku z data juz minieta)
+        zalegle_serwisy = (
+            db.query(WpisSerwisowy)
+            .filter(WpisSerwisowy.status == "w_toku")
+            .filter(WpisSerwisowy.data_serwisu < today)
+            .all()
+        )
+
+        for w in zalegle_serwisy:
+
+            car = w.samochod
+
+            dni = (today - w.data_serwisu).days
+
+            alerts.append({
+                "id": f"serwis-zalegly-{w.id}",
+                "typ": "serwis",
+                "priorytet": "critical",
+                "tytul": f"Serwis w toku od {dni} dni",
+                "opis": (
+                    f"Auto {car.marka} {car.model} "
+                    f"({car.numer_rejestracyjny}) - serwis rozpoczety "
+                    f"{w.data_serwisu.isoformat()} nadal w toku"
+                ),
+                "data": w.data_serwisu.isoformat(),
+                "samochod_id": car.id,
+                "samochod_info": (
+                    f"{car.marka} {car.model} "
+                    f"({car.numer_rejestracyjny})"
+                )
+            })
+
+        # Filtry
+        if typ_filter:
+            alerts = [
+                a for a in alerts
+                if a["typ"] == typ_filter
+            ]
+
+        if priorytet_filter:
+            alerts = [
+                a for a in alerts
+                if a["priorytet"] == priorytet_filter
+            ]
+
+        # Sortowanie: critical > warning > info, potem po dacie
+        priority_order = {
+            "critical": 0,
+            "warning": 1,
+            "info": 2
+        }
+
+        alerts.sort(
+            key=lambda a: (
+                priority_order.get(a["priorytet"], 99),
+                a["data"]
+            )
+        )
+
+        return jsonify({
+            "alerts": alerts,
+            "total": len(alerts),
+            "by_priority": {
+                "critical": sum(
+                    1 for a in alerts
+                    if a["priorytet"] == "critical"
+                ),
+                "warning": sum(
+                    1 for a in alerts
+                    if a["priorytet"] == "warning"
+                ),
+                "info": sum(
+                    1 for a in alerts
+                    if a["priorytet"] == "info"
+                )
+            }
+        }), 200
+
+    except Exception as e:
+        return jsonify({
+            "error": str(e)
+        }), 500
+
+    finally:
+        db.close()
 
 # =========================
 # UZYTKOWNICY
@@ -680,24 +916,24 @@ def get_uzytkownicy():
 # =========================
 
 @app.route("/samochody", methods=["GET"])
+@token_required
 def get_samochody():
 
     db = SessionLocal()
+
+    user_id = request.user["user_id"]
 
     try:
 
         cars = (
             db.query(Samochod)
+            .filter(Samochod.uzytkownik_id == user_id)
             .order_by(Samochod.id)
             .all()
         )
 
         return jsonify([
-            {
-                **car_to_dict(car),
-                "imie": car.uzytkownik.imie,
-                "nazwisko": car.uzytkownik.nazwisko
-            }
+            car_to_dict(car)
             for car in cars
         ]), 200
 
@@ -711,14 +947,16 @@ def get_samochody():
 
 
 @app.route("/samochody", methods=["POST"])
+@token_required
 def create_samochod():
 
     db = SessionLocal()
 
+    user_id = request.user["user_id"]
+
     data = request.get_json(silent=True) or {}
 
     required_fields = [
-        "uzytkownik_id",
         "numer_rejestracyjny",
         "marka",
         "model"
@@ -727,7 +965,7 @@ def create_samochod():
     missing = [
         field
         for field in required_fields
-        if data.get(field) is None
+        if not data.get(field)
     ]
 
     if missing:
@@ -737,9 +975,39 @@ def create_samochod():
 
     try:
 
+        # Sprawdz czy numer rejestracyjny nie jest juz zajety
+        existing = (
+            db.query(Samochod)
+            .filter(
+                Samochod.numer_rejestracyjny ==
+                data.get("numer_rejestracyjny")
+            )
+            .first()
+        )
+
+        if existing:
+            return jsonify({
+                "error": "Pojazd z tym numerem rejestracyjnym juz istnieje"
+            }), 409
+
+        # Sprawdz VIN jesli podany
+        vin = data.get("vin")
+
+        if vin:
+            existing_vin = (
+                db.query(Samochod)
+                .filter(Samochod.vin == vin)
+                .first()
+            )
+
+            if existing_vin:
+                return jsonify({
+                    "error": "Pojazd z tym numerem VIN juz istnieje"
+                }), 409
+
         created = Samochod(
-            uzytkownik_id=data.get("uzytkownik_id"),
-            vin=data.get("vin"),
+            uzytkownik_id=user_id,
+            vin=vin or None,
             numer_rejestracyjny=data.get("numer_rejestracyjny"),
             marka=data.get("marka"),
             model=data.get("model"),
@@ -747,7 +1015,7 @@ def create_samochod():
             pojemnosc_cm3=data.get("pojemnosc_cm3"),
             moc_km=data.get("moc_km"),
             paliwo=data.get("paliwo"),
-            przebieg=data.get("przebieg", 0),
+            przebieg=data.get("przebieg") or 0,
             kolor=data.get("kolor")
         )
 
@@ -760,6 +1028,204 @@ def create_samochod():
         return jsonify(
             car_to_dict(created)
         ), 201
+
+    except Exception as e:
+
+        db.rollback()
+
+        return jsonify({
+            "error": str(e)
+        }), 500
+
+    finally:
+        db.close()
+
+# =========================
+# SAMOCHODY: GET ONE
+# =========================
+
+@app.route("/samochody/<int:car_id>", methods=["GET"])
+@token_required
+def get_samochod(car_id):
+
+    db = SessionLocal()
+
+    user_id = request.user["user_id"]
+
+    try:
+
+        car = (
+            db.query(Samochod)
+            .filter(Samochod.id == car_id)
+            .filter(Samochod.uzytkownik_id == user_id)
+            .first()
+        )
+
+        if not car:
+            return jsonify({
+                "error": "Pojazd nie istnieje lub nie nalezy do Ciebie"
+            }), 404
+
+        return jsonify(
+            car_to_dict(car)
+        ), 200
+
+    except Exception as e:
+        return jsonify({
+            "error": str(e)
+        }), 500
+
+    finally:
+        db.close()
+
+
+# =========================
+# SAMOCHODY: UPDATE
+# =========================
+
+@app.route("/samochody/<int:car_id>", methods=["PUT"])
+@token_required
+def update_samochod(car_id):
+
+    db = SessionLocal()
+
+    user_id = request.user["user_id"]
+
+    data = request.get_json(silent=True) or {}
+
+    try:
+
+        car = (
+            db.query(Samochod)
+            .filter(Samochod.id == car_id)
+            .filter(Samochod.uzytkownik_id == user_id)
+            .first()
+        )
+
+        if not car:
+            return jsonify({
+                "error": "Pojazd nie istnieje lub nie nalezy do Ciebie"
+            }), 404
+
+        # Walidacja numeru rejestracyjnego
+        if "numer_rejestracyjny" in data:
+
+            new_nr = (
+                data.get("numer_rejestracyjny") or ""
+            ).strip()
+
+            if not new_nr:
+                return jsonify({
+                    "error": "Numer rejestracyjny nie moze byc pusty"
+                }), 400
+
+            if new_nr != car.numer_rejestracyjny:
+
+                existing = (
+                    db.query(Samochod)
+                    .filter(
+                        Samochod.numer_rejestracyjny == new_nr
+                    )
+                    .first()
+                )
+
+                if existing:
+                    return jsonify({
+                        "error": "Pojazd z tym numerem rejestracyjnym juz istnieje"
+                    }), 409
+
+                car.numer_rejestracyjny = new_nr
+
+        # Walidacja VIN
+        if "vin" in data:
+
+            new_vin = (data.get("vin") or "").strip() or None
+
+            if new_vin and new_vin != car.vin:
+
+                existing_vin = (
+                    db.query(Samochod)
+                    .filter(Samochod.vin == new_vin)
+                    .first()
+                )
+
+                if existing_vin:
+                    return jsonify({
+                        "error": "Pojazd z tym numerem VIN juz istnieje"
+                    }), 409
+
+            car.vin = new_vin
+
+        # Pozostale pola
+        for field in [
+            "marka",
+            "model",
+            "rok_produkcji",
+            "pojemnosc_cm3",
+            "moc_km",
+            "paliwo",
+            "przebieg",
+            "kolor"
+        ]:
+            if field in data:
+                setattr(car, field, data.get(field))
+
+        car.zaktualizowano_w = datetime.datetime.utcnow()
+
+        db.commit()
+
+        db.refresh(car)
+
+        return jsonify({
+            "message": "Pojazd zaktualizowany",
+            "car": car_to_dict(car)
+        }), 200
+
+    except Exception as e:
+
+        db.rollback()
+
+        return jsonify({
+            "error": str(e)
+        }), 500
+
+    finally:
+        db.close()
+
+
+# =========================
+# SAMOCHODY: DELETE
+# =========================
+
+@app.route("/samochody/<int:car_id>", methods=["DELETE"])
+@token_required
+def delete_samochod(car_id):
+
+    db = SessionLocal()
+
+    user_id = request.user["user_id"]
+
+    try:
+
+        car = (
+            db.query(Samochod)
+            .filter(Samochod.id == car_id)
+            .filter(Samochod.uzytkownik_id == user_id)
+            .first()
+        )
+
+        if not car:
+            return jsonify({
+                "error": "Pojazd nie istnieje lub nie nalezy do Ciebie"
+            }), 404
+
+        db.delete(car)
+
+        db.commit()
+
+        return jsonify({
+            "message": "Pojazd usuniety"
+        }), 200
 
     except Exception as e:
 
