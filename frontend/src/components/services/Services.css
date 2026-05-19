@@ -1,0 +1,186 @@
+.services-page__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.services-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.service-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px 20px;
+}
+
+.service-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 10px;
+  gap: 12px;
+}
+
+.service-card__title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.service-card__date {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.service-card__meta {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 10px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  flex-wrap: wrap;
+}
+
+.service-card__meta-item strong {
+  color: var(--text-primary);
+}
+
+.service-card__status {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.service-card__status--w_toku       { background: #f59e0b; color: #fff; }
+.service-card__status--zakonczony   { background: #10b981; color: #fff; }
+.service-card__status--anulowany    { background: #6b7280; color: #fff; }
+
+.service-card__details {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.service-card__sublist {
+  margin: 6px 0 0 0;
+  padding-left: 20px;
+}
+
+.service-card__cost {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+  font-size: 14px;
+  color: var(--accent-bright);
+  font-weight: 600;
+  text-align: right;
+}
+
+.service-card__actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.service-card__actions button {
+  padding: 7px 14px;
+  background: var(--bg-hover);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: background 0.2s;
+}
+
+.service-card__actions button:hover {
+  background: var(--bg-active);
+}
+
+.service-card__actions button.primary {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
+.service-card__actions button.primary:hover {
+  background: var(--accent-bright);
+}
+
+/* Modal — dziedziczy z car-modal */
+.service-modal {
+  max-width: 700px;
+  width: 90%;
+}
+
+.service-modal__section {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.service-modal__section h3 {
+  margin: 0 0 10px 0;
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+.service-modal__row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+  align-items: flex-end;
+}
+
+.service-modal__row > * {
+  flex: 1;
+}
+
+.service-modal__row button.remove {
+  flex: 0 0 auto;
+  padding: 10px 12px;
+  background: transparent;
+  color: #ef4444;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.service-modal__add-btn {
+  padding: 8px 14px;
+  background: var(--bg-hover);
+  color: var(--accent-bright);
+  border: 1px dashed var(--accent-border);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  margin-top: 4px;
+}
+
+.service-modal__select,
+.service-modal__textarea {
+  width: 100%;
+  padding: 10px 12px;
+  background: var(--bg-hover);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: inherit;
+}
+
+.service-modal__textarea {
+  resize: vertical;
+  min-height: 60px;
+}

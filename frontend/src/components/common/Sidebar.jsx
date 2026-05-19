@@ -54,6 +54,7 @@ const NAV = [
     items: [
       { id: "dashboard", label: "Dashboard" },
       { id: "drives",    label: "Pojazdy" },
+      { id: "services",  label: "Serwisy" },
       { id: "routes",    label: "Trasy",
         children: [
           { id: "routes-active",   label: "Aktywne" },
@@ -100,6 +101,7 @@ const NAV = [
     items: [
       { id: "dashboard", label: "Dashboard" },
       { id: "drives",    label: "Pojazdy" },
+      { id: "services",  label: "Serwisy" },
       { id: "routes",    label: "Trasy",
         children: [
           { id: "routes-active",   label: "Aktywne" },

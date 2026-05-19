@@ -1,0 +1,159 @@
+.reports-filters {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 20px;
+}
+
+.reports-filters__row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.reports-filters__row:last-child {
+  margin-bottom: 0;
+}
+
+.reports-filters input,
+.reports-filters select {
+  width: 100%;
+  padding: 8px 12px;
+  background: var(--bg-hover);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.reports-filters__actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.reports-filters__clear {
+  padding: 7px 14px;
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.reports-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.report-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px 20px;
+}
+
+.report-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 10px;
+  gap: 12px;
+}
+
+.report-card__number {
+  font-family: monospace;
+  font-size: 14px;
+  color: var(--accent-bright);
+  background: var(--bg-hover);
+  padding: 3px 8px;
+  border-radius: 4px;
+}
+
+.report-card__date {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.report-card__title {
+  margin: 0 0 6px 0;
+  font-size: 15px;
+  color: var(--text-primary);
+}
+
+.report-card__meta {
+  display: flex;
+  gap: 12px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  flex-wrap: wrap;
+}
+
+.report-card__tasks {
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.report-card__cost {
+  margin-top: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--accent-bright);
+}
+
+.report-card__actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+
+.report-card__actions button {
+  padding: 7px 14px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: background 0.2s;
+}
+
+.report-card__actions button.primary {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
+.report-card__actions button.primary:hover {
+  background: var(--accent-bright);
+}
+
+.report-card__actions button.secondary {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.report-card__actions button.secondary:hover {
+  background: var(--bg-active);
+}
+
+.report-card__actions button.danger {
+  background: transparent;
+  color: #ef4444;
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+.report-card__actions button.danger:hover {
+  background: #ef4444;
+  color: #fff;
+}
+
+.email-modal__hint {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 4px;
+}

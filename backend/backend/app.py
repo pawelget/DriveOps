@@ -1,5 +1,7 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
+from pdf_utils import generate_service_report_pdf, generate_report_number, REPORTS_DIR
+from email_utils import send_report_email
 
 import bcrypt
 import jwt
@@ -1244,14 +1246,19 @@ def delete_samochod(car_id):
 # =========================
 
 @app.route("/wpisy-serwisowe", methods=["GET"])
+@token_required
 def get_wpisy_serwisowe():
 
     db = SessionLocal()
+
+    user_id = request.user["user_id"]
 
     try:
 
         rows = (
             db.query(WpisSerwisowy)
+            .join(Samochod)
+            .filter(Samochod.uzytkownik_id == user_id)
             .order_by(
                 WpisSerwisowy.data_serwisu.desc(),
                 WpisSerwisowy.id.desc()
@@ -1260,7 +1267,7 @@ def get_wpisy_serwisowe():
         )
 
         return jsonify([
-            wpis_to_dict(row)
+            wpis_full_to_dict(row)
             for row in rows
         ]), 200
 
@@ -1273,23 +1280,73 @@ def get_wpisy_serwisowe():
         db.close()
 
 
+@app.route("/wpisy-serwisowe/<int:wpis_id>", methods=["GET"])
+@token_required
+def get_wpis_serwisowy(wpis_id):
+
+    db = SessionLocal()
+
+    user_id = request.user["user_id"]
+
+    try:
+
+        wpis = (
+            db.query(WpisSerwisowy)
+            .join(Samochod)
+            .filter(WpisSerwisowy.id == wpis_id)
+            .filter(Samochod.uzytkownik_id == user_id)
+            .first()
+        )
+
+        if not wpis:
+            return jsonify({
+                "error": "Wpis nie istnieje lub nie nalezy do Ciebie"
+            }), 404
+
+        return jsonify(
+            wpis_full_to_dict(wpis)
+        ), 200
+
+    except Exception as e:
+        return jsonify({
+            "error": str(e)
+        }), 500
+
+    finally:
+        db.close()
+
+
 @app.route("/wpisy-serwisowe", methods=["POST"])
+@token_required
 def create_wpis_serwisowy():
 
     db = SessionLocal()
 
+    user_id = request.user["user_id"]
+
     data = request.get_json(silent=True) or {}
 
-    if (
-        data.get("samochod_id") is None
-        or data.get("data_serwisu") is None
-    ):
+    if not data.get("samochod_id") or not data.get("data_serwisu"):
         return jsonify({
             "error": "Wymagane pola: samochod_id, data_serwisu"
         }), 400
 
     try:
 
+        # Sprawdz czy auto nalezy do usera
+        car = (
+            db.query(Samochod)
+            .filter(Samochod.id == data["samochod_id"])
+            .filter(Samochod.uzytkownik_id == user_id)
+            .first()
+        )
+
+        if not car:
+            return jsonify({
+                "error": "Pojazd nie istnieje lub nie nalezy do Ciebie"
+            }), 403
+
+        # Stworz wpis
         created = WpisSerwisowy(
             samochod_id=data.get("samochod_id"),
             rodzaj_serwisu_id=data.get("rodzaj_serwisu_id"),
@@ -1298,19 +1355,76 @@ def create_wpis_serwisowy():
             adres_warsztatu=data.get("adres_warsztatu"),
             przebieg_przy_serwisie=data.get("przebieg_przy_serwisie"),
             nastepny_serwis_przebieg=data.get("nastepny_serwis_przebieg"),
-            nastepna_data_serwisu=data.get("nastepna_data_serwisu"),
+            nastepna_data_serwisu=data.get("nastepna_data_serwisu") or None,
             opis=data.get("opis"),
-            status=data.get("status", "w_toku")
+            status=data.get("status", "zakonczony")
         )
 
         db.add(created)
+        db.flush()  # zeby miec ID wpisu
+
+        # Dodaj czynnosci
+        for zad_data in (data.get("zadania") or []):
+
+            if not zad_data.get("nazwa_zadania"):
+                continue
+
+            zadanie = ZadanieSerwisowe(
+                wpis_serwisowy_id=created.id,
+                nazwa_zadania=zad_data.get("nazwa_zadania"),
+                opis=zad_data.get("opis"),
+                koszt_robocizny=zad_data.get("koszt_robocizny") or 0
+            )
+
+            db.add(zadanie)
+
+        # Dodaj uzyte czesci
+        for uc_data in (data.get("uzyte_czesci") or []):
+
+            # Czesc moze byc nowa (po nazwie) albo istniejaca (po czesc_id)
+            czesc_id = uc_data.get("czesc_id")
+
+            if not czesc_id and uc_data.get("nazwa_czesci"):
+
+                # Sprawdz czy taka czesc juz jest
+                existing_czesc = (
+                    db.query(Czesc)
+                    .filter(Czesc.nazwa == uc_data["nazwa_czesci"])
+                    .filter(
+                        Czesc.numer_czesci == uc_data.get("numer_czesci")
+                    )
+                    .first()
+                )
+
+                if existing_czesc:
+                    czesc_id = existing_czesc.id
+                else:
+                    nowa_czesc = Czesc(
+                        nazwa=uc_data["nazwa_czesci"],
+                        producent=uc_data.get("producent_czesci"),
+                        numer_czesci=uc_data.get("numer_czesci")
+                    )
+                    db.add(nowa_czesc)
+                    db.flush()
+                    czesc_id = nowa_czesc.id
+
+            if not czesc_id:
+                continue
+
+            uzyta = UzytaCzesc(
+                wpis_serwisowy_id=created.id,
+                czesc_id=czesc_id,
+                ilosc=uc_data.get("ilosc") or 1,
+                cena_jednostkowa=uc_data.get("cena_jednostkowa") or 0
+            )
+
+            db.add(uzyta)
 
         db.commit()
-
         db.refresh(created)
 
         return jsonify(
-            wpis_to_dict(created)
+            wpis_full_to_dict(created)
         ), 201
 
     except Exception as e:
@@ -1324,6 +1438,36 @@ def create_wpis_serwisowy():
     finally:
         db.close()
 
+# =========================
+# RODZAJE SERWISOW
+# =========================
+
+@app.route("/rodzaje-serwisu", methods=["GET"])
+@token_required
+def get_rodzaje_serwisu():
+
+    db = SessionLocal()
+
+    try:
+
+        rows = (
+            db.query(RodzajSerwisu)
+            .order_by(RodzajSerwisu.nazwa)
+            .all()
+        )
+
+        return jsonify([
+            rodzaj_serwisu_to_dict(row)
+            for row in rows
+        ]), 200
+
+    except Exception as e:
+        return jsonify({
+            "error": str(e)
+        }), 500
+
+    finally:
+        db.close()
 
 # =========================
 # PRZEGLADY
@@ -1451,6 +1595,643 @@ def get_koszty_serwisow():
         ]), 200
 
     except Exception as e:
+        return jsonify({
+            "error": str(e)
+        }), 500
+
+    finally:
+        db.close()
+
+# =========================
+# SERIALIZERS
+# =========================
+
+def zadanie_to_dict(z: ZadanieSerwisowe):
+    return {
+        "id": z.id,
+        "wpis_serwisowy_id": z.wpis_serwisowy_id,
+        "nazwa_zadania": z.nazwa_zadania,
+        "opis": z.opis,
+        "koszt_robocizny": float(z.koszt_robocizny or 0)
+    }
+
+
+def czesc_to_dict(c: Czesc):
+    return {
+        "id": c.id,
+        "nazwa": c.nazwa,
+        "producent": c.producent,
+        "numer_czesci": c.numer_czesci
+    }
+
+
+def uzyta_czesc_to_dict(uc: UzytaCzesc):
+    return {
+        "id": uc.id,
+        "wpis_serwisowy_id": uc.wpis_serwisowy_id,
+        "czesc_id": uc.czesc_id,
+        "ilosc": float(uc.ilosc or 0),
+        "cena_jednostkowa": float(uc.cena_jednostkowa or 0),
+        "suma": float((uc.ilosc or 0) * (uc.cena_jednostkowa or 0)),
+        "czesc": czesc_to_dict(uc.czesc) if uc.czesc else None
+    }
+
+
+def rodzaj_serwisu_to_dict(rs: RodzajSerwisu):
+    return {
+        "id": rs.id,
+        "nazwa": rs.nazwa,
+        "opis": rs.opis
+    }
+
+
+def wpis_full_to_dict(w: WpisSerwisowy):
+    """Wpis serwisowy z pelnymi danymi - czynnosci, czesci, koszt"""
+    koszt_robocizny = sum(
+        float(z.koszt_robocizny or 0)
+        for z in w.zadania
+    )
+    koszt_czesci = sum(
+        float((uc.ilosc or 0) * (uc.cena_jednostkowa or 0))
+        for uc in w.uzyte_czesci
+    )
+
+    return {
+        "id": w.id,
+        "samochod_id": w.samochod_id,
+        "rodzaj_serwisu_id": w.rodzaj_serwisu_id,
+        "rodzaj_serwisu": (
+            rodzaj_serwisu_to_dict(w.rodzaj_serwisu)
+            if w.rodzaj_serwisu else None
+        ),
+        "data_serwisu": (
+            w.data_serwisu.isoformat()
+            if w.data_serwisu else None
+        ),
+        "nazwa_warsztatu": w.nazwa_warsztatu,
+        "adres_warsztatu": w.adres_warsztatu,
+        "przebieg_przy_serwisie": w.przebieg_przy_serwisie,
+        "nastepny_serwis_przebieg": w.nastepny_serwis_przebieg,
+        "nastepna_data_serwisu": (
+            w.nastepna_data_serwisu.isoformat()
+            if w.nastepna_data_serwisu else None
+        ),
+        "opis": w.opis,
+        "status": w.status,
+        "zadania": [zadanie_to_dict(z) for z in w.zadania],
+        "uzyte_czesci": [
+            uzyta_czesc_to_dict(uc) for uc in w.uzyte_czesci
+        ],
+        "koszt_robocizny": koszt_robocizny,
+        "koszt_czesci": koszt_czesci,
+        "koszt_calkowity": koszt_robocizny + koszt_czesci,
+        "samochod": {
+            "id": w.samochod.id,
+            "marka": w.samochod.marka,
+            "model": w.samochod.model,
+            "numer_rejestracyjny": w.samochod.numer_rejestracyjny,
+            "vin": w.samochod.vin
+        } if w.samochod else None,
+        "ma_raport": w.raport is not None,
+        "raport_id": w.raport.id if w.raport else None
+    }
+
+# =========================
+# RAPORTY: HELPERS
+# =========================
+
+def raport_to_dict(r: Raport):
+    return {
+        "id": r.id,
+        "wpis_serwisowy_id": r.wpis_serwisowy_id,
+        "numer_raportu": r.numer_raportu,
+        "sciezka_do_pliku": r.sciezka_do_pliku,
+        "wygenerowano_w": (
+            r.wygenerowano_w.isoformat()
+            if r.wygenerowano_w else None
+        )
+    }
+
+
+def raport_full_to_dict(r: Raport):
+    """Raport z danymi wpisu serwisowego dla listy."""
+    wpis = r.wpis_serwisowy
+    car = wpis.samochod if wpis else None
+
+    koszt_robocizny = sum(
+        float(z.koszt_robocizny or 0)
+        for z in (wpis.zadania if wpis else [])
+    )
+    koszt_czesci = sum(
+        float((uc.ilosc or 0) * (uc.cena_jednostkowa or 0))
+        for uc in (wpis.uzyte_czesci if wpis else [])
+    )
+
+    return {
+        **raport_to_dict(r),
+        "wpis_serwisowy": {
+            "id": wpis.id,
+            "data_serwisu": (
+                wpis.data_serwisu.isoformat()
+                if wpis.data_serwisu else None
+            ),
+            "nazwa_warsztatu": wpis.nazwa_warsztatu,
+            "opis": wpis.opis,
+            "status": wpis.status,
+            "rodzaj_serwisu_nazwa": (
+                wpis.rodzaj_serwisu.nazwa
+                if wpis.rodzaj_serwisu else None
+            ),
+            "koszt_calkowity": koszt_robocizny + koszt_czesci
+        } if wpis else None,
+        "samochod": {
+            "id": car.id,
+            "marka": car.marka,
+            "model": car.model,
+            "numer_rejestracyjny": car.numer_rejestracyjny
+        } if car else None,
+        "nazwy_czynnosci": [
+            z.nazwa_zadania
+            for z in (wpis.zadania if wpis else [])
+        ]
+    }
+
+
+def build_report_data(wpis: WpisSerwisowy, raport: Raport):
+    """Sklada slownik do generatora PDF."""
+    user = wpis.samochod.uzytkownik
+
+    koszt_robocizny = sum(
+        float(z.koszt_robocizny or 0)
+        for z in wpis.zadania
+    )
+    koszt_czesci = sum(
+        float((uc.ilosc or 0) * (uc.cena_jednostkowa or 0))
+        for uc in wpis.uzyte_czesci
+    )
+
+    return {
+        "numer_raportu": raport.numer_raportu,
+        "wygenerowano_w": (
+            raport.wygenerowano_w.strftime("%Y-%m-%d %H:%M")
+            if raport.wygenerowano_w
+            else datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
+        ),
+        "uzytkownik": {
+            "imie": user.imie,
+            "nazwisko": user.nazwisko,
+            "email": user.email
+        },
+        "samochod": {
+            "marka": wpis.samochod.marka,
+            "model": wpis.samochod.model,
+            "numer_rejestracyjny": wpis.samochod.numer_rejestracyjny,
+            "vin": wpis.samochod.vin
+        },
+        "wpis": {
+            "data_serwisu": (
+                wpis.data_serwisu.isoformat()
+                if wpis.data_serwisu else None
+            ),
+            "nazwa_warsztatu": wpis.nazwa_warsztatu,
+            "adres_warsztatu": wpis.adres_warsztatu,
+            "przebieg_przy_serwisie": wpis.przebieg_przy_serwisie,
+            "opis": wpis.opis,
+            "rodzaj_serwisu_nazwa": (
+                wpis.rodzaj_serwisu.nazwa
+                if wpis.rodzaj_serwisu else None
+            ),
+            "status": wpis.status
+        },
+        "zadania": [
+            {
+                "nazwa": z.nazwa_zadania,
+                "opis": z.opis,
+                "koszt": float(z.koszt_robocizny or 0)
+            }
+            for z in wpis.zadania
+        ],
+        "czesci": [
+            {
+                "nazwa": uc.czesc.nazwa if uc.czesc else "-",
+                "producent": uc.czesc.producent if uc.czesc else None,
+                "ilosc": float(uc.ilosc or 0),
+                "cena_jednostkowa": float(uc.cena_jednostkowa or 0),
+                "suma": float((uc.ilosc or 0) * (uc.cena_jednostkowa or 0))
+            }
+            for uc in wpis.uzyte_czesci
+        ],
+        "koszt_robocizny": koszt_robocizny,
+        "koszt_czesci": koszt_czesci,
+        "koszt_calkowity": koszt_robocizny + koszt_czesci
+    }
+
+
+# =========================
+# RAPORTY: LISTA Z FILTRAMI
+# =========================
+
+@app.route("/raporty", methods=["GET"])
+@token_required
+def get_raporty():
+
+    db = SessionLocal()
+
+    user_id = request.user["user_id"]
+
+    # Query params (filtry)
+    search = (request.args.get("search") or "").strip().lower()
+    date_from = request.args.get("date_from")
+    date_to = request.args.get("date_to")
+    warsztat = (request.args.get("warsztat") or "").strip().lower()
+    cost_min = request.args.get("cost_min")
+    cost_max = request.args.get("cost_max")
+    samochod_id = request.args.get("samochod_id")
+
+    try:
+
+        query = (
+            db.query(Raport)
+            .join(WpisSerwisowy)
+            .join(Samochod)
+            .filter(Samochod.uzytkownik_id == user_id)
+        )
+
+        if date_from:
+            query = query.filter(
+                WpisSerwisowy.data_serwisu >= date_from
+            )
+
+        if date_to:
+            query = query.filter(
+                WpisSerwisowy.data_serwisu <= date_to
+            )
+
+        if samochod_id:
+            query = query.filter(
+                Samochod.id == int(samochod_id)
+            )
+
+        raporty = (
+            query
+            .order_by(Raport.wygenerowano_w.desc())
+            .all()
+        )
+
+        # Filtry dzialajace po stronie Pythona
+        # (wymagaja agregacji albo searcha w czynnosciach)
+        result = []
+
+        for r in raporty:
+
+            wpis = r.wpis_serwisowy
+
+            if not wpis:
+                continue
+
+            # Warsztat
+            if warsztat and warsztat not in (
+                (wpis.nazwa_warsztatu or "").lower()
+            ):
+                continue
+
+            # Koszt
+            koszt = sum(
+                float(z.koszt_robocizny or 0)
+                for z in wpis.zadania
+            ) + sum(
+                float((uc.ilosc or 0) * (uc.cena_jednostkowa or 0))
+                for uc in wpis.uzyte_czesci
+            )
+
+            if cost_min and koszt < float(cost_min):
+                continue
+
+            if cost_max and koszt > float(cost_max):
+                continue
+
+            # Search po czynnosciach + opisie + numerze raportu
+            if search:
+                haystack_parts = [
+                    r.numer_raportu or "",
+                    wpis.opis or "",
+                    wpis.nazwa_warsztatu or ""
+                ]
+                haystack_parts.extend(
+                    (z.nazwa_zadania or "")
+                    for z in wpis.zadania
+                )
+                haystack_parts.extend(
+                    (uc.czesc.nazwa or "")
+                    for uc in wpis.uzyte_czesci
+                    if uc.czesc
+                )
+
+                haystack = " ".join(haystack_parts).lower()
+
+                if search not in haystack:
+                    continue
+
+            result.append(raport_full_to_dict(r))
+
+        return jsonify(result), 200
+
+    except Exception as e:
+        return jsonify({
+            "error": str(e)
+        }), 500
+
+    finally:
+        db.close()
+
+
+# =========================
+# RAPORTY: GENEROWANIE
+# =========================
+
+@app.route(
+    "/raporty/generuj/<int:wpis_id>",
+    methods=["POST"]
+)
+@token_required
+def generate_raport(wpis_id):
+
+    db = SessionLocal()
+
+    user_id = request.user["user_id"]
+
+    try:
+
+        wpis = (
+            db.query(WpisSerwisowy)
+            .join(Samochod)
+            .filter(WpisSerwisowy.id == wpis_id)
+            .filter(Samochod.uzytkownik_id == user_id)
+            .first()
+        )
+
+        if not wpis:
+            return jsonify({
+                "error": "Wpis nie istnieje lub nie nalezy do Ciebie"
+            }), 404
+
+        # Sprawdz czy juz nie ma raportu (relacja 1:1)
+        if wpis.raport:
+            return jsonify({
+                "error": "Raport dla tego wpisu juz istnieje",
+                "raport_id": wpis.raport.id
+            }), 409
+
+        # Stworz wpis raportu (bez sciezki, bez numeru - dostaniemy ID)
+        raport = Raport(
+            wpis_serwisowy_id=wpis.id,
+            numer_raportu="TEMP",
+            sciezka_do_pliku=None
+        )
+        db.add(raport)
+        db.flush()  # zeby miec ID
+
+        # Wygeneruj numer raportu w formacie R/2026/00001
+        year = datetime.datetime.now().year
+        raport.numer_raportu = generate_report_number(raport.id, year)
+
+        # Sciezka do PDF
+        pdf_filename = (
+            f"raport_{raport.numer_raportu.replace('/', '_')}.pdf"
+        )
+        pdf_path = os.path.join(REPORTS_DIR, pdf_filename)
+
+        # Buduj dane dla generatora
+        report_data = build_report_data(wpis, raport)
+
+        # Generuj PDF
+        generate_service_report_pdf(report_data, pdf_path)
+
+        # Zapisz sciezke
+        raport.sciezka_do_pliku = pdf_path
+
+        db.commit()
+        db.refresh(raport)
+
+        return jsonify({
+            "message": "Raport wygenerowany",
+            "raport": raport_full_to_dict(raport)
+        }), 201
+
+    except Exception as e:
+
+        db.rollback()
+
+        return jsonify({
+            "error": str(e)
+        }), 500
+
+    finally:
+        db.close()
+
+
+# =========================
+# RAPORTY: POBIERANIE PDF
+# =========================
+
+@app.route("/raporty/<int:raport_id>/pdf", methods=["GET"])
+@token_required
+def download_raport_pdf(raport_id):
+
+    from flask import send_file
+
+    db = SessionLocal()
+
+    user_id = request.user["user_id"]
+
+    try:
+
+        raport = (
+            db.query(Raport)
+            .join(WpisSerwisowy)
+            .join(Samochod)
+            .filter(Raport.id == raport_id)
+            .filter(Samochod.uzytkownik_id == user_id)
+            .first()
+        )
+
+        if not raport:
+            return jsonify({
+                "error": "Raport nie istnieje lub nie nalezy do Ciebie"
+            }), 404
+
+        if not raport.sciezka_do_pliku or not os.path.exists(
+            raport.sciezka_do_pliku
+        ):
+            return jsonify({
+                "error": "Plik PDF nie istnieje na dysku"
+            }), 404
+
+        return send_file(
+            raport.sciezka_do_pliku,
+            mimetype="application/pdf",
+            as_attachment=True,
+            download_name=(
+                f"raport_{raport.numer_raportu.replace('/', '_')}.pdf"
+            )
+        )
+
+    except Exception as e:
+        return jsonify({
+            "error": str(e)
+        }), 500
+
+    finally:
+        db.close()
+
+
+# =========================
+# RAPORTY: WYSYLKA EMAIL
+# =========================
+
+@app.route(
+    "/raporty/<int:raport_id>/wyslij-email",
+    methods=["POST"]
+)
+@token_required
+def send_raport_email(raport_id):
+
+    db = SessionLocal()
+
+    user_id = request.user["user_id"]
+
+    data = request.get_json(silent=True) or {}
+
+    # Opcjonalnie: inny email niz user-a (np. do warsztatu)
+    custom_email = (data.get("email") or "").strip()
+
+    try:
+
+        raport = (
+            db.query(Raport)
+            .join(WpisSerwisowy)
+            .join(Samochod)
+            .filter(Raport.id == raport_id)
+            .filter(Samochod.uzytkownik_id == user_id)
+            .first()
+        )
+
+        if not raport:
+            return jsonify({
+                "error": "Raport nie istnieje lub nie nalezy do Ciebie"
+            }), 404
+
+        if not raport.sciezka_do_pliku or not os.path.exists(
+            raport.sciezka_do_pliku
+        ):
+            return jsonify({
+                "error": "Plik PDF nie istnieje na dysku"
+            }), 404
+
+        car = raport.wpis_serwisowy.samochod
+        user = car.uzytkownik
+
+        target_email = custom_email or user.email
+        car_info = (
+            f"{car.marka} {car.model} ({car.numer_rejestracyjny})"
+        )
+
+        # Wyslij email
+        result = send_report_email(
+            to_email=target_email,
+            report_number=raport.numer_raportu,
+            pdf_path=raport.sciezka_do_pliku,
+            car_info=car_info
+        )
+
+        if not result["success"]:
+            return jsonify({
+                "error": result["message"]
+            }), 500
+
+        # Zapisz historie w powiadomienia_email
+        powiadomienie = PowiadomienieEmail(
+            uzytkownik_id=user.id,
+            samochod_id=car.id,
+            raport_id=raport.id,
+            adres_email=target_email,
+            temat=(
+                f"DriveOps - Raport serwisowy {raport.numer_raportu}"
+            ),
+            wiadomosc=(
+                f"Raport {raport.numer_raportu} dla {car_info}"
+            ),
+            status="wyslane",
+            wyslano_w=datetime.datetime.utcnow()
+        )
+        db.add(powiadomienie)
+        db.commit()
+
+        return jsonify({
+            "message": result["message"],
+            "email": target_email
+        }), 200
+
+    except Exception as e:
+
+        db.rollback()
+
+        return jsonify({
+            "error": str(e)
+        }), 500
+
+    finally:
+        db.close()
+
+
+# =========================
+# RAPORTY: USUWANIE
+# =========================
+
+@app.route("/raporty/<int:raport_id>", methods=["DELETE"])
+@token_required
+def delete_raport(raport_id):
+
+    db = SessionLocal()
+
+    user_id = request.user["user_id"]
+
+    try:
+
+        raport = (
+            db.query(Raport)
+            .join(WpisSerwisowy)
+            .join(Samochod)
+            .filter(Raport.id == raport_id)
+            .filter(Samochod.uzytkownik_id == user_id)
+            .first()
+        )
+
+        if not raport:
+            return jsonify({
+                "error": "Raport nie istnieje lub nie nalezy do Ciebie"
+            }), 404
+
+        # Usun plik PDF
+        if raport.sciezka_do_pliku and os.path.exists(
+            raport.sciezka_do_pliku
+        ):
+            try:
+                os.remove(raport.sciezka_do_pliku)
+            except OSError:
+                pass  # ignorujemy bledy IO
+
+        db.delete(raport)
+        db.commit()
+
+        return jsonify({
+            "message": "Raport usuniety"
+        }), 200
+
+    except Exception as e:
+
+        db.rollback()
+
         return jsonify({
             "error": str(e)
         }), 500
