@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event'; // <-- NOWY IMPORT!
+import userEvent from '@testing-library/user-event';
 import '@testing-library/jest-dom';
 import LoginForm from './LoginForm';
 
@@ -49,9 +49,6 @@ describe('LoginForm', () => {
     // 4. Klikamy "Zaloguj"
     await user.click(submitButton);
 
-    // Gdybyś chciał sprawdzić konkretny komunikat błędu z Twojej aplikacji
-    // (np. czerwony napis "Nie znaleziono użytkownika"), odkomentuj i dostosuj to:
-    // const errorMessage = await screen.findByText(/nie znaleziono użytkownika/i);
-    // expect(errorMessage).toBeInTheDocument();
+
   });
 });

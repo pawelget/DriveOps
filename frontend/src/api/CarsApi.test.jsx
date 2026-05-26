@@ -1,7 +1,7 @@
 import { apiFetch } from './Client';
 import { getCars } from './CarsApi';
 
-// 1. RĘCZNY MOCK: Zlecenie dla Jesta, żeby podmienił funkcję apiFetch na naszego "szpiega"
+// 1.MOCK: Zlecenie dla Jesta, żeby podmienił funkcję apiFetch
 jest.mock('./Client', () => ({
   apiFetch: jest.fn(),
 }));
@@ -21,7 +21,7 @@ describe('CarsApi', () => {
     // 4. Uruchamiamy prawdziwą funkcję z Twojego pliku
     await getCars();
 
-    // 5. Sprawdzamy, czy funkcja strzeliła pod WŁAŚCIWY endpoint z WŁAŚCIWĄ metodą
+    // 5. Sprawdzamy, czy funkcja strzeliła pod endpoint z wlasciwa metodą
     expect(apiFetch).toHaveBeenCalledWith('/samochody', {
       method: 'GET',
     });
