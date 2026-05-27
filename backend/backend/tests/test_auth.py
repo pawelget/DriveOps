@@ -6,7 +6,7 @@ def test_rejestracja_sukces(client):
         "imie": "Jan",
         "nazwisko": "Kowalski",
         "email": "jan@example.com",
-        "haslo": "superhaslo123!",
+        "haslo": "Superhaslo123!",
         "telefon": "123456789"
     })
 
@@ -38,17 +38,33 @@ def test_logowanie_sukces(client):
         "imie": "Anna",
         "nazwisko": "Nowak",
         "email": "anna@example.com",
-        "haslo": "testowehaslo123!"
+        "haslo": "Testowehaslo123!"
     })
 
     # Próbujemy się zalogować
     response = client.post("/auth/login", json={
         "email": "anna@example.com",
-        "haslo": "testowehaslo123!"
+        "haslo": "Testowehaslo123!"
     })
 
     assert response.status_code == 200
     assert "token" in response.get_json()
+
+def test_logowanie_bledne_haslo(client):
+    client.post("/auth/register", json={
+        "imie": "Anna",
+        "nazwisko": "Nowak",
+        "email": "anna2@example.com",
+        "haslo": "Testowe123!"
+    })
+
+    response = client.post("/auth/login", json={
+        "email": "anna2@example.com",
+        "haslo": "ZleHaslo123!"
+    })
+
+    assert response.status_code == 401
+    assert "Nieprawidlowy email lub haslo" in response.get_json()["error"]    
 
 def test_dostep_do_chronionego_endpointu(client):
     """Testuje czy /auth/me wpuszcza tylko z poprawnym tokenem."""
@@ -61,11 +77,11 @@ def test_dostep_do_chronionego_endpointu(client):
         "imie": "Maks",
         "nazwisko": "Testowy",
         "email": "maks@example.com",
-        "haslo": "haslomaksa123!"
+        "haslo": "Haslomaksa123!"
     })
     login_response = client.post("/auth/login", json={
         "email": "maks@example.com",
-        "haslo": "haslomaksa123!"
+        "haslo": "Haslomaksa123!"
     })
     token = login_response.get_json()["token"]
 

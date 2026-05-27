@@ -11,10 +11,10 @@ def test_data(client):
     # 1. Rejestracja i logowanie
     client.post("/auth/register", json={
         "imie": "Anna", "nazwisko": "Raportowa",
-        "email": "anna_raport@example.com", "haslo": "tajnehaslo"
+        "email": "anna_raport@example.com", "haslo": "Tajnehaslo123!"
     })
     log_res = client.post("/auth/login", json={
-        "email": "anna_raport@example.com", "haslo": "tajnehaslo"
+        "email": "anna_raport@example.com", "haslo": "Tajnehaslo123!"
     })
     token = log_res.get_json()["token"]
     headers = {"Authorization": f"Bearer {token}"}

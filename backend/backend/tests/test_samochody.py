@@ -7,14 +7,14 @@ def auth_headers(client):
         "imie": "Jan",
         "nazwisko": "Kierowca",
         "email": "kierowca@example.com",
-        "haslo": "tajnehaslo"
+        "haslo": "Tajnehaslo123!"
     })
     # Upewniamy się, że rejestracja się udała!
     assert reg_response.status_code == 201
 
     log_response = client.post("/auth/login", json={
         "email": "kierowca@example.com",
-        "haslo": "tajnehaslo"
+        "haslo": "Tajnehaslo123!"
     })
     token = log_response.get_json()["token"]
 
