@@ -48,6 +48,14 @@ function CarForm({ car, onClose, onSaved }) {
   async function handleSubmit(e) {
     e.preventDefault();
     setError("");
+
+    const vin = form.vin.trim();
+
+    if (vin && vin.length !== 17) {
+      setError("VIN musi mieć dokładnie 17 znaków");
+      return;
+    }
+
     setLoading(true);
 
     const payload = {
