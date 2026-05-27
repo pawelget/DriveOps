@@ -20,27 +20,64 @@ function RegisterForm() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
+  const [confirmPassword, setConfirmPassword] = useState("");
 
   function handleChange(e) {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   }
 
   async function handleSubmit(e) {
-    e.preventDefault();
-    setError("");
-    setSuccess("");
-    setLoading(true);
-    try {
-      const data = await registerUser(form);
-      saveToken(data.token);
-      setSuccess("Rejestracja zakończona sukcesem");
-      navigate("/profil");
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
+  e.preventDefault();
+  setError("");
+  setSuccess("");
+
+  // WALIDACJA
+
+  if (form.haslo.length < 8) {
+    setError("Hasło musi mieć co najmniej 8 znaków");
+    return;
   }
+
+  if (form.haslo !== confirmPassword) {
+    setError("Hasła nie są takie same");
+    return;
+  }
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  if (!emailRegex.test(form.email)) {
+    setError("Podaj poprawny adres email");
+    return;
+  }
+
+  if (!/[A-Z]/.test(form.haslo)) {
+    setError("Hasło musi zawierać dużą literę");
+    return;
+  }
+
+  if (!/\d/.test(form.haslo)) {
+    setError("Hasło musi zawierać cyfrę");
+    return;
+  }
+
+  if (!/[!@#$%^&*]/.test(form.haslo)) {
+    setError("Hasło musi zawierać znak specjalny");
+    return;
+  }
+
+  setLoading(true);
+
+  try {
+    const data = await registerUser(form);
+    saveToken(data.token);
+    setSuccess("Rejestracja zakończona sukcesem");
+    navigate("/profil");
+  } catch (err) {
+    setError(err.message);
+  } finally {
+    setLoading(false);
+  }
+}
 
   return (
     <div className="login-page-wrapper">
@@ -82,7 +119,14 @@ function RegisterForm() {
             name="haslo"
             value={form.haslo}
             onChange={handleChange}
-            placeholder="Podaj hasło"
+            placeholder="Podaj hasło (min. 8 znaków, znak specjalny i cyfra"
+          />
+          <Input
+            label="Powtórz hasło"
+            type="password"
+            placeholder="Powtórz hasło"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
           />
           <Input
             label="Telefon"

@@ -6,7 +6,7 @@ def test_rejestracja_sukces(client):
         "imie": "Jan",
         "nazwisko": "Kowalski",
         "email": "jan@example.com",
-        "haslo": "superhaslo123",
+        "haslo": "superhaslo123!",
         "telefon": "123456789"
     })
 
@@ -38,13 +38,13 @@ def test_logowanie_sukces(client):
         "imie": "Anna",
         "nazwisko": "Nowak",
         "email": "anna@example.com",
-        "haslo": "testowehaslo"
+        "haslo": "testowehaslo123!"
     })
 
     # Próbujemy się zalogować
     response = client.post("/auth/login", json={
         "email": "anna@example.com",
-        "haslo": "testowehaslo"
+        "haslo": "testowehaslo123!"
     })
 
     assert response.status_code == 200
@@ -61,11 +61,11 @@ def test_dostep_do_chronionego_endpointu(client):
         "imie": "Maks",
         "nazwisko": "Testowy",
         "email": "maks@example.com",
-        "haslo": "haslomaksa"
+        "haslo": "haslomaksa123!"
     })
     login_response = client.post("/auth/login", json={
         "email": "maks@example.com",
-        "haslo": "haslomaksa"
+        "haslo": "haslomaksa123!"
     })
     token = login_response.get_json()["token"]
 
@@ -77,3 +77,26 @@ def test_dostep_do_chronionego_endpointu(client):
 
     assert response_with_token.status_code == 200
     assert response_with_token.get_json()["email"] == "maks@example.com"
+
+def test_rejestracja_slabe_haslo(client):
+    response = client.post("/auth/register", json={
+        "imie": "Jan",
+        "nazwisko": "Slaby",
+        "email": "slaby@example.com",
+        "haslo": "abc"
+    })
+
+    assert response.status_code == 400
+    assert "Haslo" in response.get_json()["error"]
+
+
+def test_rejestracja_nieprawidlowy_email(client):
+    response = client.post("/auth/register", json={
+        "imie": "Jan",
+        "nazwisko": "Email",
+        "email": "zlyemail",
+        "haslo": "Test123!"
+    })
+
+    assert response.status_code == 400
+    assert "email" in response.get_json()["error"].lower()

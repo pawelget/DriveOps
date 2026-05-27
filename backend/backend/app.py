@@ -7,6 +7,7 @@ import bcrypt
 import jwt
 import os
 import datetime
+import re
 
 from functools import wraps
 from dotenv import load_dotenv
@@ -256,9 +257,31 @@ def register():
             "error": "Wymagane pola: imie, nazwisko, email, haslo"
         }), 400
 
-    if len(haslo) < 6:
+    if len(haslo) < 8:
         return jsonify({
-            "error": "Haslo musi miec co najmniej 6 znakow"
+        "error": "Haslo musi miec co najmniej 8 znakow"
+    }), 400
+
+    if not re.search(r"[A-Z]", haslo):
+        return jsonify({
+            "error": "Haslo musi zawierac co najmniej jedna duza litere"
+        }), 400
+
+    if not re.search(r"\d", haslo):
+        return jsonify({
+            "error": "Haslo musi zawierac co najmniej jedna cyfre"
+        }), 400
+
+    if not re.search(r"[!@#$%^&*()_+\-=\[\]{};':\"\\|,.<>\/?]", haslo):
+        return jsonify({
+            "error": "Haslo musi zawierac znak specjalny"
+        }), 400
+
+    email_regex = r"^[^\s@]+@[^\s@]+\.[^\s@]+$"
+
+    if not re.match(email_regex, email):
+        return jsonify({
+            "error": "Niepoprawny adres email"
         }), 400
 
     try:
@@ -535,11 +558,26 @@ def change_password():
             "error": "Wymagane pola: obecne_haslo, nowe_haslo"
         }), 400
 
-    if len(nowe_haslo) < 6:
+    if len(nowe_haslo) < 8:
         return jsonify({
-            "error": "Nowe haslo musi miec co najmniej 6 znakow"
+            "error": "Nowe haslo musi miec co najmniej 8 znakow"
+    }), 400
+
+    if not re.search(r"[A-Z]", nowe_haslo):
+        return jsonify({
+            "error": "Nowe haslo musi zawierac co najmniej jedna duza litere"
         }), 400
 
+    if not re.search(r"\d", nowe_haslo):
+        return jsonify({
+            "error": "Nowe haslo musi zawierac co najmniej jedna cyfre"
+        }), 400
+
+    if not re.search(r"[!@#$%^&*()_+\-=\[\]{};':\"\\|,.<>\/?]", nowe_haslo):
+        return jsonify({
+            "error": "Nowe haslo musi zawierac znak specjalny"
+        }), 400
+    
     if obecne_haslo == nowe_haslo:
         return jsonify({
             "error": "Nowe haslo musi byc rozne od obecnego"

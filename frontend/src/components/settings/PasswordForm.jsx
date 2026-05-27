@@ -24,15 +24,30 @@ function PasswordForm() {
     setError("");
     setSuccess("");
 
-    if (form.nowe_haslo !== form.nowe_haslo_powtorz) {
-      setError("Nowe hasla nie sa identyczne");
-      return;
-    }
+  if (form.nowe_haslo !== form.nowe_haslo_powtorz) {
+    setError("Nowe hasla nie sa identyczne");
+    return;
+}
 
-    if (form.nowe_haslo.length < 6) {
-      setError("Nowe haslo musi miec co najmniej 6 znakow");
-      return;
-    }
+  if (form.nowe_haslo.length < 8) {
+    setError("Nowe haslo musi miec co najmniej 8 znakow");
+    return;
+  }
+
+  if (!/[A-Z]/.test(form.nowe_haslo)) {
+    setError("Haslo musi zawierac duza litere");
+    return;
+  }
+
+  if (!/\d/.test(form.nowe_haslo)) {
+    setError("Haslo musi zawierac cyfre");
+    return;
+  }
+
+  if (!/[!@#$%^&*]/.test(form.nowe_haslo)) {
+    setError("Haslo musi zawierac znak specjalny");
+    return;
+  }
 
     setLoading(true);
     try {
@@ -69,7 +84,7 @@ function PasswordForm() {
           name="nowe_haslo"
           value={form.nowe_haslo}
           onChange={handleChange}
-          placeholder="Nowe haslo (min. 6 znakow)"
+          placeholder="Nowe haslo (min. 8 znakow, znak specjalny oraz cyfra)"
         />
         <Input
           label="Powtorz nowe haslo"
