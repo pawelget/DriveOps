@@ -55,14 +55,6 @@ const NAV = [
       { id: "dashboard", label: "Dashboard" },
       { id: "drives",    label: "Pojazdy" },
       { id: "services",  label: "Serwisy" },
-      { id: "routes",    label: "Trasy",
-        children: [
-          { id: "routes-active",   label: "Aktywne" },
-          { id: "routes-history",  label: "Historia" },
-          { id: "routes-planned",  label: "Planowane" },
-        ]
-      },
-      { id: "drivers",   label: "Kierowcy" },
     ]
   },
   {
@@ -102,14 +94,6 @@ const NAV = [
       { id: "dashboard", label: "Dashboard" },
       { id: "drives",    label: "Pojazdy" },
       { id: "services",  label: "Serwisy" },
-      { id: "routes",    label: "Trasy",
-        children: [
-          { id: "routes-active",   label: "Aktywne" },
-          { id: "routes-history",  label: "Historia" },
-          { id: "routes-planned",  label: "Planowane" },
-        ]
-      },
-      { id: "drivers",   label: "Kierowcy" },
     ]
   },
   {
