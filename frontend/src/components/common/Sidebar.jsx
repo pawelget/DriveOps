@@ -47,25 +47,6 @@ const ArrowSVG = () => (
   </svg>
 );
 
-// ── Nav config ─────────────────────────────────────────
-const NAV = [
-  {
-    section: "Główne",
-    items: [
-      { id: "dashboard", label: "Dashboard" },
-      { id: "drives",    label: "Pojazdy" },
-      { id: "services",  label: "Serwisy" },
-    ]
-  },
-  {
-    section: "Zarządzanie",
-    items: [
-      { id: "reports",  label: "Raporty", badge: 2 },
-      { id: "alerts",   label: "Alerty",  badge: 5 },
-      { id: "settings", label: "Ustawienia" },
-    ]
-  }
-];
 
 // ── Component ──────────────────────────────────────────
 export default function Sidebar({ active: activeProp, onNavigate, userName = "Użytkownik", userRole = "Admin" }) {
@@ -94,12 +75,13 @@ const NAV = [
       { id: "dashboard", label: "Dashboard" },
       { id: "drives",    label: "Pojazdy" },
       { id: "services",  label: "Serwisy" },
+
     ]
   },
   {
     section: "Zarządzanie",
     items: [
-      { id: "reports",  label: "Raporty", badge: 2 },
+      { id: "reports",  label: "Raporty"},
       { id: "alerts",   label: "Alerty",  badge: alertsCount || null },
       { id: "settings", label: "Ustawienia" },
     ]
