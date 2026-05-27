@@ -4,6 +4,12 @@ import userEvent from '@testing-library/user-event';
 import '@testing-library/jest-dom';
 import LoginForm from './LoginForm';
 
+jest.mock("../../api/AuthApi", () => ({
+  loginUser: jest.fn(() =>
+    Promise.reject(new Error("Nieprawidłowe dane logowania"))
+  ),
+}));
+
 // Oszukujemy hooki nawigacyjne
 jest.mock('react-router-dom', () => ({
   useNavigate: () => jest.fn(),
@@ -28,7 +34,6 @@ describe('LoginForm', () => {
   // Test nr 2 (NOWY: symulacja klawiatury i kliknięcia)
   test('symuluje wpisanie zlych danych i klikniecie zaloguj', async () => {
     // Inicjujemy naszego wirtualnego użytkownika
-    const user = userEvent.setup();
     render(<LoginForm />);
 
     // 1. Szukamy pól tekstowych. Zazwyczaj najłatwiej znaleźć je po szarym tekście (Placeholder)
@@ -39,15 +44,15 @@ describe('LoginForm', () => {
     const submitButton = screen.getByRole('button', { name: /zaloguj/i });
 
     // 2. Symulujemy prawdziwe wpisywanie tekstu klawisz po klawiszu
-    await user.type(emailInput, 'kompletnie@zly.email.pl');
-    await user.type(passwordInput, 'bledne_haslo');
+    await userEvent.type(emailInput, 'kompletnie@zly.email.pl');
+    await userEvent.type(passwordInput, 'Bledne123!');
 
     // 3. Upewniamy się, że wirtualny React zareagował i wpisał te wartości do pól
     expect(emailInput).toHaveValue('kompletnie@zly.email.pl');
-    expect(passwordInput).toHaveValue('bledne_haslo');
+    expect(passwordInput).toHaveValue('Bledne123!');
 
     // 4. Klikamy "Zaloguj"
-    await user.click(submitButton);
+    await userEvent.click(submitButton);
 
 
   });
