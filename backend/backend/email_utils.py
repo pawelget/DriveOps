@@ -85,3 +85,43 @@ DriveOps Vehicle Management System
             "success": False,
             "message": f"Blad wysylki email: {str(e)}"
         }
+
+def send_notification_email(
+    to_email: str,
+    subject: str,
+    body: str
+) -> dict:
+    """
+    Wysyla zwykly email tekstowy (bez zalacznika).
+    Uzywane do powiadomien, np. o dodaniu pojazdu.
+    Zwraca slownik {'success': bool, 'message': str}.
+    """
+    if not SMTP_USER or not SMTP_PASSWORD:
+        return {
+            "success": False,
+            "message": "SMTP nie jest skonfigurowany"
+        }
+
+    try:
+        msg = MIMEMultipart()
+        msg["Subject"] = subject
+        msg["From"] = SMTP_FROM
+        msg["To"] = to_email
+
+        msg.attach(MIMEText(body, "plain", "utf-8"))
+
+        with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as server:
+            server.starttls()
+            server.login(SMTP_USER, SMTP_PASSWORD)
+            server.sendmail(SMTP_FROM, [to_email], msg.as_string())
+
+        return {
+            "success": True,
+            "message": f"Email wyslany na {to_email}"
+        }
+
+    except Exception as e:
+        return {
+            "success": False,
+            "message": f"Blad wysylki email: {str(e)}"
+        }

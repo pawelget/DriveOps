@@ -94,7 +94,7 @@ const NAV = [
   };
 
   const handleProfileClick = () => {
-    onNavigate("profile");
+    onNavigate("settings");
   };
 
   const toggle = (id) =>

@@ -1,7 +1,7 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from pdf_utils import generate_service_report_pdf, generate_report_number, REPORTS_DIR
-from email_utils import send_report_email
+from email_utils import send_report_email, send_notification_email
 
 import bcrypt
 import jwt
@@ -1064,6 +1064,72 @@ def create_samochod():
         db.commit()
 
         db.refresh(created)
+
+        # =========================
+        # Automatyczne powiadomienie email o dodaniu pojazdu
+        # =========================
+        try:
+            user = (
+                db.query(Uzytkownik)
+                .filter(Uzytkownik.id == user_id)
+                .first()
+            )
+
+            if user and user.email:
+
+                car_info = (
+                    f"{created.marka} {created.model} "
+                    f"({created.numer_rejestracyjny})"
+                )
+
+                subject = f"DriveOps - dodano pojazd {car_info}"
+
+                body = f"""\
+Dzien dobry {user.imie},
+
+do Twojego konta w systemie DriveOps zostal dodany nowy pojazd:
+
+  Marka i model: {created.marka} {created.model}
+  Numer rejestracyjny: {created.numer_rejestracyjny}
+  VIN: {created.vin or '-'}
+  Rok produkcji: {created.rok_produkcji or '-'}
+
+Jesli to nie Ty dodales ten pojazd, skontaktuj sie z administratorem.
+
+Pozdrawiamy,
+DriveOps Vehicle Management System
+"""
+
+                email_result = send_notification_email(
+                    to_email=user.email,
+                    subject=subject,
+                    body=body
+                )
+
+                # Zapisz powiadomienie w historii
+                powiadomienie = PowiadomienieEmail(
+                    uzytkownik_id=user.id,
+                    samochod_id=created.id,
+                    adres_email=user.email,
+                    temat=subject,
+                    wiadomosc=body,
+                    status=(
+                        "wyslane"
+                        if email_result["success"]
+                        else "blad"
+                    ),
+                    wyslano_w=(
+                        datetime.datetime.utcnow()
+                        if email_result["success"]
+                        else None
+                    )
+                )
+                db.add(powiadomienie)
+                db.commit()
+
+        except Exception as email_err:
+            # Nie blokujemy dodania auta jesli email sie nie uda
+            print(f"[create_samochod] Blad wysylki powiadomienia: {email_err}")
 
         return jsonify(
             car_to_dict(created)
