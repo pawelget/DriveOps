@@ -20,6 +20,9 @@ import java.io.FileOutputStream
 import java.io.InputStream
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import android.content.ContentValues
+import android.os.Build
+import android.provider.MediaStore
 
 class ReportsActivity : AppCompatActivity() {
 
@@ -164,32 +167,86 @@ class ReportsActivity : AppCompatActivity() {
         }
 
         // Funkcja pomocnicza do zapisu pliku PDF
+        // Funkcja pomocnicza zapisująca pobrany raport PDF w publicznym folderze Pobrane.
         private fun savePdfToDisk(body: ResponseBody, fileName: String) {
             try {
-                // Szukamy publicznego folderu "Downloads" na telefonie
-                val folder = getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS)
-                val file = File(folder, fileName)
-
-                var inputStream: InputStream? = null
-                var outputStream: FileOutputStream? = null
-
-                try {
-                    inputStream = body.byteStream()
-                    outputStream = FileOutputStream(file)
-                    val buffer = ByteArray(4096)
-                    var bytesRead: Int
-
-                    while (inputStream.read(buffer).also { bytesRead = it } != -1) {
-                        outputStream.write(buffer, 0, bytesRead)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    /*
+                     * Od Androida 10 zapisujemy dokument przez MediaStore.
+                     * Dzięki temu plik pojawi się w publicznym folderze Pobrane
+                     * i będzie widoczny w zwykłym menedżerze plików telefonu.
+                     */
+                    val contentValues = ContentValues().apply {
+                        put(MediaStore.Downloads.DISPLAY_NAME, fileName)
+                        put(MediaStore.Downloads.MIME_TYPE, "application/pdf")
+                        put(MediaStore.Downloads.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS)
+                        put(MediaStore.Downloads.IS_PENDING, 1)
                     }
-                    outputStream.flush()
-                    Toast.makeText(this@ReportsActivity, "Zapisano w: Pobrane/$fileName", Toast.LENGTH_LONG).show()
-                } finally {
-                    inputStream?.close()
-                    outputStream?.close()
+
+                    val resolver = contentResolver
+                    val uri = resolver.insert(
+                        MediaStore.Downloads.EXTERNAL_CONTENT_URI,
+                        contentValues
+                    )
+
+                    if (uri == null) {
+                        Toast.makeText(
+                            this@ReportsActivity,
+                            "Nie udało się utworzyć pliku PDF",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                        return
+                    }
+
+                    resolver.openOutputStream(uri)?.use { outputStream ->
+                        body.byteStream().use { inputStream ->
+                            inputStream.copyTo(outputStream)
+                        }
+                    }
+
+                    contentValues.clear()
+                    contentValues.put(MediaStore.Downloads.IS_PENDING, 0)
+                    resolver.update(uri, contentValues, null, null)
+
+                    Toast.makeText(
+                        this@ReportsActivity,
+                        "Pobrano raport do folderu Pobrane: $fileName",
+                        Toast.LENGTH_LONG
+                    ).show()
+
+                } else {
+                    /*
+                     * Starsze wersje Androida zapisują plik bezpośrednio
+                     * w publicznym folderze Download.
+                     */
+                    val downloadsFolder =
+                        Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+
+                    if (!downloadsFolder.exists()) {
+                        downloadsFolder.mkdirs()
+                    }
+
+                    val file = File(downloadsFolder, fileName)
+
+                    body.byteStream().use { inputStream ->
+                        FileOutputStream(file).use { outputStream ->
+                            inputStream.copyTo(outputStream)
+                        }
+                    }
+
+                    Toast.makeText(
+                        this@ReportsActivity,
+                        "Pobrano raport do folderu Pobrane: $fileName",
+                        Toast.LENGTH_LONG
+                    ).show()
                 }
+
             } catch (e: Exception) {
-                Toast.makeText(this@ReportsActivity, "Nie udało się zapisać pliku", Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    this@ReportsActivity,
+                    "Nie udało się zapisać pliku: ${e.message}",
+                    Toast.LENGTH_LONG
+                ).show()
             }
         }
     }
