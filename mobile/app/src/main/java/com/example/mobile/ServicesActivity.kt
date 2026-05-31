@@ -2,7 +2,6 @@ package com.example.mobile
 
 import android.os.Bundle
 import android.text.InputType
-import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -16,6 +15,8 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import okhttp3.ResponseBody
 import retrofit2.Call
 import retrofit2.Callback
@@ -23,29 +24,66 @@ import retrofit2.Response
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
 
+/**
+ * Aktywność odpowiedzialna za historię serwisową pojazdów użytkownika.
+ *
+ * Widok umożliwia:
+ * - pobieranie i wyświetlanie dotychczasowych wpisów serwisowych,
+ * - przejście z powrotem do ekranu pojazdów,
+ * - otwarcie formularza dodawania nowego serwisu,
+ * - przypisanie serwisu do wybranego samochodu,
+ * - dodanie wykonanych czynności i wykorzystanych części,
+ * - przesłanie nowego wpisu do backendu.
+ */
 class ServicesActivity : AppCompatActivity() {
 
+    /**
+     * Lista wpisów serwisowych pobranych z backendu.
+     * Jest przekazywana do adaptera odpowiedzialnego za wyświetlanie kart serwisów.
+     */
     private var allServices: List<ServiceRecord> = emptyList()
 
+    // Lista widoczna na ekranie, zawierająca historię napraw i przeglądów.
     private lateinit var lvServices: ListView
 
+    /**
+     * Token JWT zalogowanego użytkownika.
+     * Token został zapisany podczas logowania i jest wymagany
+     * przez backend przy pobieraniu oraz dodawaniu danych.
+     */
     private val token: String?
         get() = MainActivity.authToken
 
+    /**
+     * Metoda wywoływana podczas tworzenia ekranu historii serwisowej.
+     * Inicjalizuje layout, przyciski, obsługę pasków systemowych
+     * oraz pobiera istniejące wpisy serwisowe.
+     */
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Podpięcie pliku XML odpowiadającego za wygląd widoku serwisów.
         setContentView(R.layout.activity_services)
 
+        /*
+         * Pobranie głównego kontenera widoku.
+         * Kontener będzie odsunięty od pasków systemowych telefonu,
+         * aby elementy interfejsu nie nachodziły na górny pasek statusu
+         * ani dolny pasek nawigacyjny.
+         */
         val servicesRoot = findViewById<View>(R.id.servicesRoot)
 
+        // Zapamiętanie początkowych odstępów ustawionych w pliku XML.
         val originalLeftPadding = servicesRoot.paddingLeft
         val originalTopPadding = servicesRoot.paddingTop
         val originalRightPadding = servicesRoot.paddingRight
         val originalBottomPadding = servicesRoot.paddingBottom
 
+        /*
+         * Pobranie rzeczywistej wielkości pasków systemowych urządzenia
+         * i dodanie jej do odstępów głównego kontenera.
+         */
         ViewCompat.setOnApplyWindowInsetsListener(servicesRoot) { view, windowInsets ->
             val systemBars = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars())
 
@@ -59,25 +97,43 @@ class ServicesActivity : AppCompatActivity() {
             windowInsets
         }
 
+        // Wymuszenie obliczenia bezpiecznych odstępów po uruchomieniu widoku.
         ViewCompat.requestApplyInsets(servicesRoot)
 
+        // Pobranie listy, na której będą wyświetlane wpisy serwisowe.
         lvServices = findViewById(R.id.lvServices)
 
-        // Znajdujemy przycisk i ustawiamy powrót.
+        // Znajdujemy przycisk powrotu i ustawiamy jego działanie.
         val btnBack = findViewById<Button>(R.id.btnBack)
         btnBack.setOnClickListener {
-            // Zamyka ekran serwisów, automatycznie wracając do ekranu pojazdów.
+            /*
+             * Zamknięcie obecnej aktywności automatycznie powoduje
+             * powrót do poprzedniego ekranu, czyli widoku pojazdów.
+             */
             finish()
         }
 
         // Przycisk otwierający formularz dodawania nowego wpisu serwisowego.
         val btnAddService = findViewById<Button>(R.id.btnAddService)
         btnAddService.setOnClickListener {
+            /*
+             * Przed pokazaniem formularza należy pobrać pojazdy użytkownika
+             * oraz dostępne rodzaje serwisu, ponieważ są wybierane w formularzu.
+             */
             loadFormDataAndShowDialog()
         }
 
+        /*
+         * Dostęp do historii serwisowej wymaga zalogowanego użytkownika.
+         * Jeżeli token nie istnieje, aplikacja nie może pobrać prywatnych danych.
+         */
         if (token == null) {
-            Toast.makeText(this, "Brak tokenu!", Toast.LENGTH_SHORT).show()
+            Toast.makeText(
+                this,
+                "Brak tokenu!",
+                Toast.LENGTH_SHORT
+            ).show()
+
             finish()
             return
         }
@@ -86,20 +142,33 @@ class ServicesActivity : AppCompatActivity() {
         loadServices()
     }
 
-    // Pobiera wszystkie wpisy serwisowe użytkownika i wyświetla je na liście.
+    /**
+     * Pobiera wszystkie wpisy serwisowe przypisane do zalogowanego użytkownika.
+     * Do żądania dołączany jest token JWT w nagłówku Authorization.
+     */
     private fun loadServices() {
         val currentToken = token ?: return
 
         ApiClient.authService.getServices("Bearer $currentToken")
             .enqueue(object : Callback<List<ServiceRecord>> {
 
+                /**
+                 * Metoda wykonywana po otrzymaniu odpowiedzi backendu.
+                 * Jeżeli odpowiedź jest poprawna, wpisy zostają wyświetlone na liście.
+                 */
                 override fun onResponse(
                     call: Call<List<ServiceRecord>>,
                     response: Response<List<ServiceRecord>>
                 ) {
                     if (response.isSuccessful) {
                         allServices = response.body() ?: emptyList()
-                        lvServices.adapter = ServiceAdapter(this@ServicesActivity, allServices)
+
+                        /*
+                         * Utworzenie adaptera, który zamienia obiekty ServiceRecord
+                         * na czytelne karty historii serwisowej w interfejsie.
+                         */
+                        lvServices.adapter =
+                            ServiceAdapter(this@ServicesActivity, allServices)
                     } else {
                         Toast.makeText(
                             this@ServicesActivity,
@@ -109,7 +178,14 @@ class ServicesActivity : AppCompatActivity() {
                     }
                 }
 
-                override fun onFailure(call: Call<List<ServiceRecord>>, t: Throwable) {
+                /**
+                 * Obsługa sytuacji, gdy nie udało się połączyć z backendem,
+                 * na przykład z powodu wyłączonego serwera lub problemu z siecią.
+                 */
+                override fun onFailure(
+                    call: Call<List<ServiceRecord>>,
+                    t: Throwable
+                ) {
                     Toast.makeText(
                         this@ServicesActivity,
                         "Błąd sieci: ${t.message}",
@@ -119,10 +195,11 @@ class ServicesActivity : AppCompatActivity() {
             })
     }
 
-    /*
-     * Przed otwarciem formularza pobieramy:
-     * - pojazdy użytkownika, aby można było przypisać serwis do samochodu,
-     * - rodzaje serwisu, aby można było wybrać właściwą kategorię wpisu.
+    /**
+     * Rozpoczyna przygotowanie formularza nowego wpisu serwisowego.
+     *
+     * Najpierw pobierana jest lista samochodów użytkownika,
+     * ponieważ każdy wpis serwisowy musi być przypisany do pojazdu.
      */
     private fun loadFormDataAndShowDialog() {
         val currentToken = token ?: return
@@ -130,6 +207,10 @@ class ServicesActivity : AppCompatActivity() {
         ApiClient.authService.getCars("Bearer $currentToken")
             .enqueue(object : Callback<List<Car>> {
 
+                /**
+                 * Po poprawnym pobraniu pojazdów następuje pobranie
+                 * dostępnych rodzajów serwisu.
+                 */
                 override fun onResponse(
                     call: Call<List<Car>>,
                     response: Response<List<Car>>
@@ -145,6 +226,10 @@ class ServicesActivity : AppCompatActivity() {
 
                     val cars = response.body() ?: emptyList()
 
+                    /*
+                     * Nie można utworzyć wpisu serwisowego bez samochodu.
+                     * W takim przypadku użytkownik powinien najpierw dodać pojazd.
+                     */
                     if (cars.isEmpty()) {
                         Toast.makeText(
                             this@ServicesActivity,
@@ -157,7 +242,11 @@ class ServicesActivity : AppCompatActivity() {
                     loadServiceTypesAndShowDialog(cars)
                 }
 
-                override fun onFailure(call: Call<List<Car>>, t: Throwable) {
+                // Obsługa błędu połączenia podczas pobierania samochodów.
+                override fun onFailure(
+                    call: Call<List<Car>>,
+                    t: Throwable
+                ) {
                     Toast.makeText(
                         this@ServicesActivity,
                         "Błąd sieci: ${t.message}",
@@ -167,13 +256,20 @@ class ServicesActivity : AppCompatActivity() {
             })
     }
 
-    // Pobiera rodzaje serwisu i po ich otrzymaniu otwiera formularz dodawania.
+    /**
+     * Pobiera rodzaje serwisu dostępne w systemie.
+     *
+     * @param cars lista samochodów pobrana wcześniej z backendu.
+     */
     private fun loadServiceTypesAndShowDialog(cars: List<Car>) {
         val currentToken = token ?: return
 
         ApiClient.authService.getServiceTypes("Bearer $currentToken")
             .enqueue(object : Callback<List<ServiceTypeOption>> {
 
+                /**
+                 * Po pobraniu typów serwisu otwierany jest właściwy formularz.
+                 */
                 override fun onResponse(
                     call: Call<List<ServiceTypeOption>>,
                     response: Response<List<ServiceTypeOption>>
@@ -190,6 +286,7 @@ class ServicesActivity : AppCompatActivity() {
                     }
                 }
 
+                // Obsługa błędu połączenia podczas pobierania rodzajów serwisu.
                 override fun onFailure(
                     call: Call<List<ServiceTypeOption>>,
                     t: Throwable
@@ -203,38 +300,59 @@ class ServicesActivity : AppCompatActivity() {
             })
     }
 
-    // Otwiera formularz dodawania nowego wpisu serwisowego.
+    /**
+     * Wyświetla formularz dodawania nowego wpisu serwisowego.
+     *
+     * Formularz pozwala wskazać pojazd i rodzaj serwisu,
+     * wprowadzić podstawowe informacje o usłudze oraz dynamicznie
+     * dodać wykonane czynności i wykorzystane części.
+     *
+     * @param cars pojazdy użytkownika możliwe do wybrania w formularzu,
+     * @param serviceTypes dostępne kategorie serwisów.
+     */
     private fun showAddServiceDialog(
         cars: List<Car>,
         serviceTypes: List<ServiceTypeOption>
     ) {
+        // Załadowanie layoutu formularza dodawania nowego serwisu.
         val dialogView = layoutInflater.inflate(R.layout.dialog_add_service, null)
 
+        // Pola wyboru samochodu, rodzaju serwisu oraz statusu.
         val spServiceCar = dialogView.findViewById<Spinner>(R.id.spServiceCar)
         val spServiceType = dialogView.findViewById<Spinner>(R.id.spServiceType)
         val spServiceStatus = dialogView.findViewById<Spinner>(R.id.spServiceStatus)
 
+        // Podstawowe pola tekstowe formularza.
         val etServiceDate = dialogView.findViewById<EditText>(R.id.etServiceDate)
         val etServiceWorkshop = dialogView.findViewById<EditText>(R.id.etServiceWorkshop)
         val etServiceAddress = dialogView.findViewById<EditText>(R.id.etServiceAddress)
         val etServiceMileage = dialogView.findViewById<EditText>(R.id.etServiceMileage)
         val etServiceDescription = dialogView.findViewById<EditText>(R.id.etServiceDescription)
 
+        /*
+         * Kontenery, do których dynamicznie będą dodawane pola
+         * opisujące czynności serwisowe oraz użyte części.
+         */
         val taskContainer = dialogView.findViewById<LinearLayout>(R.id.taskContainer)
         val partContainer = dialogView.findViewById<LinearLayout>(R.id.partContainer)
 
+        // Przyciski pozwalające dodać kolejne czynności lub części.
         val btnAddTask = dialogView.findViewById<Button>(R.id.btnAddTask)
         val btnAddPart = dialogView.findViewById<Button>(R.id.btnAddPart)
 
         /*
-         * Listy przechowują pola utworzonych dynamicznie czynności i części.
-         * Dzięki temu użytkownik może dodać więcej niż jedną czynność
-         * lub więcej niż jedną wymienioną część.
+         * Listy przechowują odwołania do pól dodanych dynamicznie.
+         * Na ich podstawie podczas zapisu zbierane są wszystkie
+         * wprowadzone przez użytkownika czynności oraz części.
          */
         val taskRows = mutableListOf<TaskRowViews>()
         val partRows = mutableListOf<PartRowViews>()
 
-        // Ustawienie listy pojazdów użytkownika.
+        /*
+         * Przygotowanie opisów samochodów widocznych w rozwijanej liście.
+         * Użytkownik wybiera samochód na podstawie marki, modelu
+         * oraz numeru rejestracyjnego.
+         */
         val carLabels = cars.map { car ->
             "${car.marka ?: ""} ${car.model ?: ""} (${car.numer_rejestracyjny ?: "-"})"
         }
@@ -245,7 +363,11 @@ class ServicesActivity : AppCompatActivity() {
             carLabels
         )
 
-        // Ustawienie listy rodzajów serwisu. Pierwsza opcja oznacza brak wyboru.
+        /*
+         * Przygotowanie listy rodzajów serwisu.
+         * Pierwszy element oznacza, że użytkownik nie wybrał
+         * konkretnej kategorii serwisu.
+         */
         val serviceTypeLabels = mutableListOf("-- wybierz rodzaj serwisu --")
         serviceTypeLabels.addAll(serviceTypes.map { it.nazwa ?: "-" })
 
@@ -255,7 +377,10 @@ class ServicesActivity : AppCompatActivity() {
             serviceTypeLabels
         )
 
-        // Statusy zgodne z wartościami wykorzystywanymi w aplikacji webowej.
+        /*
+         * Statusy widoczne dla użytkownika oraz odpowiadające im wartości,
+         * które zostaną przesłane do backendu.
+         */
         val statusLabels = listOf("Zakończony", "W toku", "Anulowany")
         val statusValues = listOf("zakonczony", "w_toku", "anulowany")
 
@@ -265,25 +390,33 @@ class ServicesActivity : AppCompatActivity() {
             statusLabels
         )
 
-        // Domyślna data serwisu to bieżący dzień.
+        // Domyślne ustawienie bieżącej daty w polu daty serwisu.
         etServiceDate.setText(
             SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
         )
 
         /*
-         * Tak samo jak w aplikacji webowej, formularz na początku posiada
-         * jedną pustą czynność. Części są opcjonalne i dodawane przyciskiem.
+         * Formularz rozpoczyna się od jednego pustego wiersza czynności.
+         * Wiersze części są opcjonalne i pojawiają się dopiero
+         * po kliknięciu przycisku dodawania części.
          */
         addTaskRow(taskContainer, taskRows)
 
+        // Dodawanie kolejnego pola opisującego wykonaną czynność.
         btnAddTask.setOnClickListener {
             addTaskRow(taskContainer, taskRows)
         }
 
+        // Dodawanie pola opisującego część wykorzystaną podczas serwisu.
         btnAddPart.setOnClickListener {
             addPartRow(partContainer, partRows)
         }
 
+        /*
+         * Utworzenie okna dialogowego zawierającego formularz.
+         * Obsługa pozytywnego przycisku jest ustawiana ręcznie,
+         * aby przy błędnych danych formularz nie został zamknięty.
+         */
         val dialog = AlertDialog.Builder(this)
             .setTitle("Dodaj wpis serwisowy")
             .setView(dialogView)
@@ -294,30 +427,43 @@ class ServicesActivity : AppCompatActivity() {
         dialog.setOnShowListener {
             dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
 
+                // Pobranie samochodu wybranego w formularzu.
                 val selectedCar = cars[spServiceCar.selectedItemPosition]
 
+                /*
+                 * Pobranie identyfikatora wybranego rodzaju serwisu.
+                 * Jeżeli użytkownik pozostawił pierwszą opcję,
+                 * typ serwisu zostanie przesłany jako wartość null.
+                 */
                 val selectedTypeId = if (spServiceType.selectedItemPosition == 0) {
                     null
                 } else {
                     serviceTypes[spServiceType.selectedItemPosition - 1].id
                 }
 
+                // Pobranie podstawowych danych wpisu serwisowego.
                 val date = etServiceDate.text.toString().trim()
                 val workshop = etServiceWorkshop.text.toString().trim()
                 val address = etServiceAddress.text.toString().trim()
                 val mileageText = etServiceMileage.text.toString().trim()
                 val description = etServiceDescription.text.toString().trim()
 
+                // Data serwisu jest polem wymaganym.
                 if (date.isBlank()) {
                     etServiceDate.error = "Podaj datę serwisu"
                     return@setOnClickListener
                 }
 
+                // Sprawdzenie poprawności formatu i wartości daty.
                 if (!isValidDate(date)) {
                     etServiceDate.error = "Data musi mieć format RRRR-MM-DD"
                     return@setOnClickListener
                 }
 
+                /*
+                 * Przebieg jest polem opcjonalnym.
+                 * Jeżeli został podany, musi być poprawną liczbą całkowitą.
+                 */
                 val mileage = mileageText
                     .takeIf { it.isNotBlank() }
                     ?.toIntOrNull()
@@ -332,7 +478,10 @@ class ServicesActivity : AppCompatActivity() {
                     return@setOnClickListener
                 }
 
-                // Zbieramy wprowadzone czynności. Puste wiersze są pomijane.
+                /*
+                 * Zebranie wykonanych czynności z dynamicznie utworzonych pól.
+                 * Puste wiersze nie są przesyłane do backendu.
+                 */
                 val tasks = mutableListOf<ServiceTaskRequest>()
 
                 for (row in taskRows) {
@@ -340,6 +489,7 @@ class ServicesActivity : AppCompatActivity() {
                     val taskDescription = row.description.text.toString().trim()
                     val taskCostText = row.cost.text.toString().trim()
 
+                    // Całkowicie pusty wiersz czynności zostaje pominięty.
                     if (taskName.isBlank() &&
                         taskDescription.isBlank() &&
                         taskCostText.isBlank()
@@ -347,11 +497,16 @@ class ServicesActivity : AppCompatActivity() {
                         continue
                     }
 
+                    // Jeżeli użytkownik rozpoczął uzupełnianie czynności, nazwa jest wymagana.
                     if (taskName.isBlank()) {
                         row.name.error = "Podaj nazwę czynności"
                         return@setOnClickListener
                     }
 
+                    /*
+                     * Koszt może zostać wpisany z przecinkiem lub kropką.
+                     * Przed konwersją przecinek jest zamieniany na kropkę.
+                     */
                     val taskCost = taskCostText
                         .takeIf { it.isNotBlank() }
                         ?.replace(",", ".")
@@ -367,6 +522,7 @@ class ServicesActivity : AppCompatActivity() {
                         return@setOnClickListener
                     }
 
+                    // Utworzenie obiektu pojedynczej czynności wysyłanej do backendu.
                     tasks.add(
                         ServiceTaskRequest(
                             nazwa_zadania = taskName,
@@ -376,7 +532,10 @@ class ServicesActivity : AppCompatActivity() {
                     )
                 }
 
-                // Zbieramy użyte części. Puste wiersze są pomijane.
+                /*
+                 * Zebranie użytych części z dynamicznych pól formularza.
+                 * Dodawanie części jest opcjonalne.
+                 */
                 val parts = mutableListOf<UsedPartRequest>()
 
                 for (row in partRows) {
@@ -385,6 +544,7 @@ class ServicesActivity : AppCompatActivity() {
                     val quantityText = row.quantity.text.toString().trim()
                     val priceText = row.price.text.toString().trim()
 
+                    // Całkowicie pusty wiersz części zostaje pominięty.
                     if (partName.isBlank() &&
                         manufacturer.isBlank() &&
                         quantityText.isBlank() &&
@@ -393,11 +553,13 @@ class ServicesActivity : AppCompatActivity() {
                         continue
                     }
 
+                    // Dla rozpoczętego wpisu części jej nazwa jest wymagana.
                     if (partName.isBlank()) {
                         row.name.error = "Podaj nazwę części"
                         return@setOnClickListener
                     }
 
+                    // Konwersja ilości i ceny, z obsługą przecinka dziesiętnego.
                     val quantity = quantityText
                         .takeIf { it.isNotBlank() }
                         ?.replace(",", ".")
@@ -428,6 +590,7 @@ class ServicesActivity : AppCompatActivity() {
                         return@setOnClickListener
                     }
 
+                    // Utworzenie obiektu opisującego część wysyłaną do backendu.
                     parts.add(
                         UsedPartRequest(
                             nazwa_czesci = partName,
@@ -438,6 +601,10 @@ class ServicesActivity : AppCompatActivity() {
                     )
                 }
 
+                /*
+                 * Przygotowanie kompletnego obiektu nowego wpisu serwisowego.
+                 * Obiekt zawiera podstawowe dane, czynności oraz użyte części.
+                 */
                 val request = ServiceRequest(
                     samochod_id = selectedCar.id,
                     rodzaj_serwisu_id = selectedTypeId,
@@ -451,17 +618,26 @@ class ServicesActivity : AppCompatActivity() {
                     uzyte_czesci = parts
                 )
 
+                // Przesłanie przygotowanego wpisu serwisowego do backendu.
                 createService(request, dialog)
             }
         }
 
+        // Wyświetlenie formularza na ekranie.
         dialog.show()
+
+        /*
+         * Ustawienie jednolitego ciemnego tła dialogu.
+         * Dotyczy to również jego nagłówka oraz obszaru przycisków,
+         * dzięki czemu nie są one przezroczyste.
+         */
         dialog.window?.setBackgroundDrawable(
             android.graphics.drawable.ColorDrawable(
                 android.graphics.Color.parseColor("#1E1E24")
             )
         )
 
+        // Dostosowanie kolorów przycisków do ciemnej stylistyki aplikacji.
         dialog.getButton(AlertDialog.BUTTON_POSITIVE)
             .setTextColor(android.graphics.Color.parseColor("#B69CFF"))
 
@@ -469,45 +645,69 @@ class ServicesActivity : AppCompatActivity() {
             .setTextColor(android.graphics.Color.parseColor("#B69CFF"))
     }
 
-    /*
-     * Dodaje pojedynczy wiersz czynności serwisowej.
-     * Każda czynność posiada nazwę, opis oraz koszt robocizny.
+    /**
+     * Dodaje do formularza pojedynczy wiersz czynności serwisowej.
+     *
+     * Każda czynność posiada:
+     * - nazwę,
+     * - opcjonalny opis,
+     * - koszt robocizny.
+     *
+     * @param container kontener XML, do którego zostanie dodany nowy wiersz,
+     * @param rows lista odwołań do dynamicznie utworzonych pól czynności.
      */
     private fun addTaskRow(
         container: LinearLayout,
         rows: MutableList<TaskRowViews>
     ) {
+        // Utworzenie pionowego kontenera dla jednej czynności.
         val rowLayout = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(0, dpToPx(8), 0, dpToPx(12))
         }
 
+        // Nagłówek określający numer kolejnej czynności.
         val tvHeader = TextView(this).apply {
             text = "Czynność ${rows.size + 1}"
             textSize = 15f
+            setTextColor(android.graphics.Color.WHITE)
             setTypeface(typeface, android.graphics.Typeface.BOLD)
         }
 
+        // Pole nazwy wykonanej czynności.
         val etName = EditText(this).apply {
             hint = "Nazwa czynności, np. wymiana oleju"
             inputType = InputType.TYPE_CLASS_TEXT
+            setTextColor(android.graphics.Color.WHITE)
+            setHintTextColor(android.graphics.Color.parseColor("#8D8D94"))
         }
 
+        // Pole dodatkowego opisu czynności.
         val etDescription = EditText(this).apply {
             hint = "Opis czynności"
             inputType = InputType.TYPE_CLASS_TEXT
+            setTextColor(android.graphics.Color.WHITE)
+            setHintTextColor(android.graphics.Color.parseColor("#8D8D94"))
         }
 
+        // Pole kosztu robocizny związanego z daną czynnością.
         val etCost = EditText(this).apply {
             hint = "Koszt robocizny [zł]"
             inputType = InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_FLAG_DECIMAL
+            setTextColor(android.graphics.Color.WHITE)
+            setHintTextColor(android.graphics.Color.parseColor("#8D8D94"))
         }
 
+        // Przycisk umożliwiający usunięcie wybranej czynności.
         val btnRemove = Button(this).apply {
             text = "Usuń czynność"
             isAllCaps = false
         }
 
+        /*
+         * Zapisanie odwołań do pól w obiekcie pomocniczym.
+         * Dzięki temu dane będzie można później odczytać przy zapisie formularza.
+         */
         val rowViews = TaskRowViews(
             layout = rowLayout,
             name = etName,
@@ -517,8 +717,8 @@ class ServicesActivity : AppCompatActivity() {
 
         btnRemove.setOnClickListener {
             /*
-             * Pozostawiamy przynajmniej jeden wiersz czynności,
-             * tak samo jak formularz w aplikacji webowej.
+             * Formularz zachowuje zawsze przynajmniej jeden wiersz czynności.
+             * Jeżeli jest to jedyny wiersz, jego pola są tylko czyszczone.
              */
             if (rows.size > 1) {
                 container.removeView(rowLayout)
@@ -531,17 +731,25 @@ class ServicesActivity : AppCompatActivity() {
             }
         }
 
+        // Dodanie elementów pojedynczej czynności do jej kontenera.
         rowLayout.addView(tvHeader)
         rowLayout.addView(etName)
         rowLayout.addView(etDescription)
         rowLayout.addView(etCost)
         rowLayout.addView(btnRemove)
 
+        // Dodanie całego wiersza czynności do formularza.
         container.addView(rowLayout)
+
+        // Zapisanie utworzonych pól w liście wykorzystywanej podczas zapisu.
         rows.add(rowViews)
     }
 
-    // Aktualizuje numerację czynności po usunięciu jednego z wierszy.
+    /**
+     * Aktualizuje numery czynności po usunięciu któregoś wiersza.
+     *
+     * @param rows aktualna lista widocznych czynności.
+     */
     private fun refreshTaskHeaders(rows: List<TaskRowViews>) {
         rows.forEachIndexed { index, row ->
             val header = row.layout.getChildAt(0) as TextView
@@ -549,51 +757,76 @@ class ServicesActivity : AppCompatActivity() {
         }
     }
 
-    /*
-     * Dodaje pojedynczy wiersz użytej części.
-     * Części są opcjonalne i mogą zostać całkowicie usunięte z formularza.
+    /**
+     * Dodaje do formularza pojedynczy wiersz użytej części.
+     *
+     * Każda część posiada:
+     * - nazwę,
+     * - opcjonalnego producenta,
+     * - ilość,
+     * - cenę jednostkową.
+     *
+     * @param container kontener, w którym zostanie umieszczony nowy wiersz,
+     * @param rows lista odwołań do utworzonych pól części.
      */
     private fun addPartRow(
         container: LinearLayout,
         rows: MutableList<PartRowViews>
     ) {
+        // Utworzenie pionowego kontenera dla jednej części.
         val rowLayout = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(0, dpToPx(8), 0, dpToPx(12))
         }
 
+        // Nagłówek określający numer kolejnej części.
         val tvHeader = TextView(this).apply {
             text = "Część ${rows.size + 1}"
             textSize = 15f
+            setTextColor(android.graphics.Color.WHITE)
             setTypeface(typeface, android.graphics.Typeface.BOLD)
         }
 
+        // Pole nazwy użytej części.
         val etName = EditText(this).apply {
             hint = "Nazwa części, np. olej 5W30"
             inputType = InputType.TYPE_CLASS_TEXT
+            setTextColor(android.graphics.Color.WHITE)
+            setHintTextColor(android.graphics.Color.parseColor("#8D8D94"))
         }
 
+        // Pole producenta części.
         val etManufacturer = EditText(this).apply {
             hint = "Producent"
             inputType = InputType.TYPE_CLASS_TEXT
+            setTextColor(android.graphics.Color.WHITE)
+            setHintTextColor(android.graphics.Color.parseColor("#8D8D94"))
         }
 
+        // Pole określające liczbę wykorzystanych sztuk lub jednostek części.
         val etQuantity = EditText(this).apply {
             hint = "Ilość"
             setText("1")
             inputType = InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_FLAG_DECIMAL
+            setTextColor(android.graphics.Color.WHITE)
+            setHintTextColor(android.graphics.Color.parseColor("#8D8D94"))
         }
 
+        // Pole ceny pojedynczej sztuki lub jednostki części.
         val etPrice = EditText(this).apply {
             hint = "Cena jednostkowa [zł]"
             inputType = InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_FLAG_DECIMAL
+            setTextColor(android.graphics.Color.WHITE)
+            setHintTextColor(android.graphics.Color.parseColor("#8D8D94"))
         }
 
+        // Przycisk usuwający wybraną część z formularza.
         val btnRemove = Button(this).apply {
             text = "Usuń część"
             isAllCaps = false
         }
 
+        // Zapisanie odwołań do pól jednej części w obiekcie pomocniczym.
         val rowViews = PartRowViews(
             layout = rowLayout,
             name = etName,
@@ -603,11 +836,16 @@ class ServicesActivity : AppCompatActivity() {
         )
 
         btnRemove.setOnClickListener {
+            /*
+             * Części są opcjonalne, dlatego każdy wiersz części
+             * można całkowicie usunąć z formularza.
+             */
             container.removeView(rowLayout)
             rows.remove(rowViews)
             refreshPartHeaders(rows)
         }
 
+        // Dodanie elementów jednej części do jej kontenera.
         rowLayout.addView(tvHeader)
         rowLayout.addView(etName)
         rowLayout.addView(etManufacturer)
@@ -615,11 +853,18 @@ class ServicesActivity : AppCompatActivity() {
         rowLayout.addView(etPrice)
         rowLayout.addView(btnRemove)
 
+        // Dodanie przygotowanego wiersza do sekcji części w formularzu.
         container.addView(rowLayout)
+
+        // Zachowanie pól w liście, aby można było odczytać ich dane przy zapisie.
         rows.add(rowViews)
     }
 
-    // Aktualizuje numerację części po usunięciu jednego z wierszy.
+    /**
+     * Aktualizuje numerację części po usunięciu wybranego wiersza.
+     *
+     * @param rows aktualna lista części znajdujących się w formularzu.
+     */
     private fun refreshPartHeaders(rows: List<PartRowViews>) {
         rows.forEachIndexed { index, row ->
             val header = row.layout.getChildAt(0) as TextView
@@ -627,7 +872,16 @@ class ServicesActivity : AppCompatActivity() {
         }
     }
 
-    // Wysyła nowy wpis serwisowy do backendu.
+    /**
+     * Wysyła nowy wpis serwisowy do backendu.
+     *
+     * Po poprawnym zapisaniu wpisu okno formularza zostaje zamknięte,
+     * a historia serwisowa jest pobierana ponownie, aby natychmiast
+     * wyświetlić nowo dodany serwis.
+     *
+     * @param request komplet danych nowego wpisu serwisowego,
+     * @param dialog formularz, który zostanie zamknięty po poprawnym zapisie.
+     */
     private fun createService(
         request: ServiceRequest,
         dialog: AlertDialog
@@ -639,6 +893,9 @@ class ServicesActivity : AppCompatActivity() {
             request
         ).enqueue(object : Callback<ResponseBody> {
 
+            /**
+             * Obsługa odpowiedzi backendu po próbie zapisania serwisu.
+             */
             override fun onResponse(
                 call: Call<ResponseBody>,
                 response: Response<ResponseBody>
@@ -652,9 +909,16 @@ class ServicesActivity : AppCompatActivity() {
 
                     dialog.dismiss()
 
-                    // Po zapisaniu pobieramy listę ponownie, aby nowy wpis był od razu widoczny.
+                    /*
+                     * Po zapisaniu pobieramy listę ponownie,
+                     * aby nowy wpis był od razu widoczny na ekranie.
+                     */
                     loadServices()
                 } else {
+                    /*
+                     * Przygotowanie czytelnego komunikatu zależnego
+                     * od kodu błędu zwróconego przez backend.
+                     */
                     val message = when (response.code()) {
                         400 -> "Uzupełnij wymagane pola lub sprawdź poprawność danych."
                         401 -> "Sesja wygasła. Zaloguj się ponownie."
@@ -670,7 +934,11 @@ class ServicesActivity : AppCompatActivity() {
                 }
             }
 
-            override fun onFailure(call: Call<ResponseBody>, t: Throwable) {
+            // Obsługa problemu z połączeniem podczas zapisu wpisu.
+            override fun onFailure(
+                call: Call<ResponseBody>,
+                t: Throwable
+            ) {
                 Toast.makeText(
                     this@ServicesActivity,
                     "Błąd sieci: ${t.message}",
@@ -680,24 +948,43 @@ class ServicesActivity : AppCompatActivity() {
         })
     }
 
-    // Sprawdza, czy data ma format wymagany przez backend: RRRR-MM-DD.
+    /**
+     * Sprawdza, czy podany tekst przedstawia poprawną datę
+     * w formacie wymaganym przez backend: RRRR-MM-DD.
+     *
+     * @param value data wpisana przez użytkownika,
+     * @return true, jeżeli data jest poprawna; false w przeciwnym przypadku.
+     */
     private fun isValidDate(value: String): Boolean {
         return try {
             val formatter = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+
+            /*
+             * Wyłączenie trybu tolerancyjnego powoduje, że daty takie jak
+             * 2026-02-31 zostaną potraktowane jako niepoprawne.
+             */
             formatter.isLenient = false
             formatter.parse(value)
+
             true
         } catch (e: Exception) {
             false
         }
     }
 
-    // Pomocnicza funkcja przeliczająca dp na piksele.
+    /**
+     * Przelicza wartość odstępu podaną w dp na piksele urządzenia.
+     * Jest wykorzystywana przy dynamicznym tworzeniu elementów formularza.
+     */
     private fun dpToPx(dp: Int): Int {
         return (dp * resources.displayMetrics.density).toInt()
     }
 
-    // Przechowuje odwołania do pól jednego wiersza czynności.
+    /**
+     * Klasa pomocnicza przechowująca pola pojedynczej czynności.
+     * Umożliwia późniejsze odczytanie wartości wprowadzonych
+     * do dynamicznie utworzonych elementów formularza.
+     */
     private data class TaskRowViews(
         val layout: LinearLayout,
         val name: EditText,
@@ -705,7 +992,10 @@ class ServicesActivity : AppCompatActivity() {
         val cost: EditText
     )
 
-    // Przechowuje odwołania do pól jednego wiersza części.
+    /**
+     * Klasa pomocnicza przechowująca pola pojedynczej części.
+     * Umożliwia zebranie danych części podczas zapisu formularza.
+     */
     private data class PartRowViews(
         val layout: LinearLayout,
         val name: EditText,
@@ -714,36 +1004,60 @@ class ServicesActivity : AppCompatActivity() {
         val price: EditText
     )
 
-    // Adapter odpowiedzialny za wyświetlanie kart istniejących wpisów serwisowych.
+    /**
+     * Adapter odpowiedzialny za wyświetlanie kart istniejących wpisów serwisowych.
+     */
     inner class ServiceAdapter(
         context: AppCompatActivity,
         private val services: List<ServiceRecord>
     ) : ArrayAdapter<ServiceRecord>(context, 0, services) {
 
+        // Zwraca liczbę wpisów serwisowych znajdujących się na liście.
         override fun getCount(): Int = services.size
 
+        // Zwraca wpis serwisowy znajdujący się pod wskazanym indeksem.
         override fun getItem(position: Int): ServiceRecord = services[position]
 
+        /**
+         * Przygotowuje wygląd pojedynczej karty historii serwisowej.
+         *
+         * @param position pozycja wpisu na liście,
+         * @param convertView widok możliwy do ponownego wykorzystania,
+         * @param parent nadrzędny kontener listy.
+         */
         override fun getView(
             position: Int,
             convertView: View?,
             parent: ViewGroup
         ): View {
+            /*
+             * Jeśli istnieje już niewykorzystywany widok karty,
+             * Android wykorzystuje go ponownie zamiast tworzyć nowy.
+             */
             val view = convertView ?: LayoutInflater.from(context)
                 .inflate(R.layout.item_service, parent, false)
 
             val service = getItem(position)
 
+            // Pobranie elementów tekstowych pojedynczej karty serwisowej.
             val tvServiceDate = view.findViewById<TextView>(R.id.tvServiceDate)
             val tvServiceStatus = view.findViewById<TextView>(R.id.tvServiceStatus)
             val tvServiceCar = view.findViewById<TextView>(R.id.tvServiceCar)
             val tvServiceDetails = view.findViewById<TextView>(R.id.tvServiceDetails)
 
-            // Wyciągamy bezpiecznie datę, tylko część YYYY-MM-DD, jeśli tekst jest dłuższy.
+            /*
+             * Pobranie daty serwisu.
+             * Jeżeli backend zwrócił także godzinę, wyświetlana jest tylko
+             * pierwsza część tekstu odpowiadająca formatowi RRRR-MM-DD.
+             */
             val fullDate = service.data_serwisu ?: "Brak daty"
             tvServiceDate.text =
                 if (fullDate.length > 10) fullDate.substring(0, 10) else fullDate
 
+            /*
+             * Zamiana technicznych wartości statusu zwracanych przez backend
+             * na czytelne polskie opisy widoczne dla użytkownika.
+             */
             tvServiceStatus.text = when (service.status) {
                 "zakonczony" -> "Zakończony"
                 "w_toku" -> "W toku"
@@ -751,10 +1065,15 @@ class ServicesActivity : AppCompatActivity() {
                 else -> service.status ?: "Nieznany"
             }
 
+            // Wyświetlenie pojazdu, którego dotyczy wybrany wpis serwisowy.
             val car = service.samochod
             tvServiceCar.text =
                 "${car?.marka ?: ""} ${car?.model ?: ""} (${car?.numer_rejestracyjny ?: ""})"
 
+            /*
+             * Wyświetlenie dodatkowych danych serwisu:
+             * rodzaju usługi, warsztatu oraz całkowitego kosztu.
+             */
             tvServiceDetails.text = """
                 Rodzaj: ${service.rodzaj_serwisu?.nazwa ?: "-"}
                 Warsztat: ${service.nazwa_warsztatu ?: "-"}
