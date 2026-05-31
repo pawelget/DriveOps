@@ -15,6 +15,12 @@
         android:theme="@style/Theme.Mobile"
         android:usesCleartextTraffic="true">
         <activity
+            android:name=".AlertsActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ServicesActivity"
+            android:exported="false" />
+        <activity
             android:name=".CarsActivity"
             android:exported="false" />
         <activity

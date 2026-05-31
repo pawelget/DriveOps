@@ -29,6 +29,36 @@ data class Car(
     val moc_km: Int?,
     val kolor: String?
 )
+// Modele pomocnicze dla zagnieżdżonych danych
+data class ServiceType(val nazwa: String?)
+data class ServiceCar(val marka: String?, val model: String?, val numer_rejestracyjny: String?)
+
+// Główny model wpisu serwisowego
+data class ServiceRecord(
+    val id: Int,
+    val data_serwisu: String?,
+    val nazwa_warsztatu: String?,
+    val status: String?,
+    val koszt_calkowity: Double?,
+    val rodzaj_serwisu: ServiceType?,
+    val samochod: ServiceCar?
+)
+
+// Modele dla alertów
+data class Alert(
+    val id: String,
+    val typ: String,
+    val priorytet: String,
+    val tytul: String,
+    val opis: String,
+    val data: String,
+    val samochod_info: String
+)
+
+// Obiekt okalający (wrapper), bo backend zwraca { "alerts": [...], "total": ... }
+data class AlertsResponse(
+    val alerts: List<Alert>
+)
 // 3. Nasz Endpoint (odpowiednik AuthApi.jsx)
 interface AuthApiService {
     @POST("/auth/login")
@@ -37,7 +67,14 @@ interface AuthApiService {
     // Pobieranie aut. Wymaga podania tokenu!
     @GET("/samochody")
     fun getCars(@Header("Authorization") token: String): Call<List<Car>>
+
+    @GET("/wpisy-serwisowe")
+    fun getServices(@Header("Authorization") token: String): Call<List<ServiceRecord>>
+
+    @GET("/alerts")
+    fun getAlerts(@Header("Authorization") token: String): Call<AlertsResponse>
 }
+
 
 // 4. Konfiguracja głównego klienta
 object ApiClient {

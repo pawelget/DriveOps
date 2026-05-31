@@ -36,6 +36,24 @@
         android:dividerHeight="12dp"/>
 
     <Button
+        android:id="@+id/btnToAlerts"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:backgroundTint="#FF4C4C"
+        android:textColor="#FFFFFF"
+        android:text="Alerty systemowe"
+        android:layout_marginTop="8dp"/>
+
+    <Button
+        android:id="@+id/btnToServices"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:backgroundTint="#9B7EDE"
+        android:textColor="#FFFFFF"
+        android:text="Historia Serwisów"
+        android:layout_marginTop="8dp"/>
+
+    <Button
         android:id="@+id/btnLogout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

@@ -35,6 +35,16 @@ class CarsActivity : AppCompatActivity() {
             Toast.makeText(this, "Brak tokenu!", Toast.LENGTH_SHORT).show()
             return
         }
+        val btnToServices = findViewById<Button>(R.id.btnToServices)
+        btnToServices.setOnClickListener {
+            val intent = android.content.Intent(this@CarsActivity, ServicesActivity::class.java)
+            startActivity(intent)
+        }
+        val btnToAlerts = findViewById<Button>(R.id.btnToAlerts)
+        btnToAlerts.setOnClickListener {
+            val intent = android.content.Intent(this@CarsActivity, AlertsActivity::class.java)
+            startActivity(intent)
+        }
 
         // --- Logika wylogowania ---
         btnLogout.setOnClickListener {
