@@ -32,14 +32,25 @@
             android:text="ZS12345"
             android:textColor="#9B7EDE"
             android:textAlignment="textEnd"
-            android:textStyle="bold"/>
+            android:textStyle="bold" />
     </LinearLayout>
 
-    <TextView android:id="@+id/tvDetails"
+    <TextView
+        android:id="@+id/tvDetails"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:textColor="#A0A0A0"
         android:lineSpacingExtra="4dp"
-        android:text="Rok: 2020\nPaliwo: Hybryda\nPrzebieg: 50 000 km\nMoc: 150 KM\nKolor: czarny"/>
+        android:text="Rok: 2020\nPaliwo: Hybryda\nPrzebieg: 50 000 km\nMoc: 150 KM\nKolor: czarny" />
+
+    <Button
+        android:id="@+id/btnEditCar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="14dp"
+        android:backgroundTint="#9B7EDE"
+        android:text="Edytuj pojazd"
+        android:textAllCaps="false"
+        android:textColor="#FFFFFF" />
 
 </LinearLayout>

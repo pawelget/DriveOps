@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:padding="18dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <TextView
+            style="@style/CarFormLabel"
+            android:text="Marka *" />
+
+        <EditText
+            android:id="@+id/etEditBrand"
+            style="@style/CarFormInput"
+            android:hint="np. Toyota"
+            android:inputType="textCapWords" />
+
+        <TextView
+            style="@style/CarFormLabel"
+            android:text="Model *" />
+
+        <EditText
+            android:id="@+id/etEditModel"
+            style="@style/CarFormInput"
+            android:hint="np. Corolla"
+            android:inputType="textCapWords" />
+
+        <TextView
+            style="@style/CarFormLabel"
+            android:text="Numer rejestracyjny *" />
+
+        <EditText
+            android:id="@+id/etEditPlate"
+            style="@style/CarFormInput"
+            android:hint="np. WA12345"
+            android:inputType="textCapCharacters" />
+
+        <TextView
+            style="@style/CarFormLabel"
+            android:text="Numer VIN" />
+
+        <EditText
+            android:id="@+id/etEditVin"
+            style="@style/CarFormInput"
+            android:hint="17 znaków"
+            android:inputType="textCapCharacters"
+            android:maxLength="17" />
+
+        <TextView
+            style="@style/CarFormLabel"
+            android:text="Rok produkcji" />
+
+        <EditText
+            android:id="@+id/etEditYear"
+            style="@style/CarFormInput"
+            android:hint="np. 2020"
+            android:inputType="number" />
+
+        <TextView
+            style="@style/CarFormLabel"
+            android:text="Pojemność silnika [cm³]" />
+
+        <EditText
+            android:id="@+id/etEditCapacity"
+            style="@style/CarFormInput"
+            android:hint="np. 1598"
+            android:inputType="number" />
+
+        <TextView
+            style="@style/CarFormLabel"
+            android:text="Moc silnika [KM]" />
+
+        <EditText
+            android:id="@+id/etEditPower"
+            style="@style/CarFormInput"
+            android:hint="np. 150"
+            android:inputType="number" />
+
+        <TextView
+            style="@style/CarFormLabel"
+            android:text="Rodzaj paliwa" />
+
+        <EditText
+            android:id="@+id/etEditFuel"
+            style="@style/CarFormInput"
+            android:hint="benzyna, diesel, hybryda..."
+            android:inputType="text" />
+
+        <TextView
+            style="@style/CarFormLabel"
+            android:text="Przebieg [km]" />
+
+        <EditText
+            android:id="@+id/etEditMileage"
+            style="@style/CarFormInput"
+            android:hint="np. 120000"
+            android:inputType="number" />
+
+        <TextView
+            style="@style/CarFormLabel"
+            android:text="Kolor" />
+
+        <EditText
+            android:id="@+id/etEditColor"
+            style="@style/CarFormInput"
+            android:hint="np. Czarny"
+            android:inputType="textCapWords" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="* pola wymagane"
+            android:textColor="#777777"
+            android:textSize="12sp"
+            android:layout_marginTop="6dp" />
+
+    </LinearLayout>
+
+</ScrollView>
