@@ -206,7 +206,7 @@ object ApiClient {
      * Dla fizycznego telefonu należy ustawić adres IP komputera,
      * np. http://192.168.1.97:5000
      */
-    private const val BASE_URL = "http://10.0.2.2:5000"
+    private const val BASE_URL = "http://192.168.1.15:5000"
 
     val authService: AuthApiService by lazy {
         Retrofit.Builder()

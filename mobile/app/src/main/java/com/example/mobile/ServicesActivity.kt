@@ -23,6 +23,8 @@ import retrofit2.Response
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 
 class ServicesActivity : AppCompatActivity() {
 
@@ -36,6 +38,28 @@ class ServicesActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_services)
+
+        val servicesRoot = findViewById<View>(R.id.servicesRoot)
+
+        val originalLeftPadding = servicesRoot.paddingLeft
+        val originalTopPadding = servicesRoot.paddingTop
+        val originalRightPadding = servicesRoot.paddingRight
+        val originalBottomPadding = servicesRoot.paddingBottom
+
+        ViewCompat.setOnApplyWindowInsetsListener(servicesRoot) { view, windowInsets ->
+            val systemBars = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars())
+
+            view.setPadding(
+                originalLeftPadding + systemBars.left,
+                originalTopPadding + systemBars.top,
+                originalRightPadding + systemBars.right,
+                originalBottomPadding + systemBars.bottom
+            )
+
+            windowInsets
+        }
+
+        ViewCompat.requestApplyInsets(servicesRoot)
 
         lvServices = findViewById(R.id.lvServices)
 

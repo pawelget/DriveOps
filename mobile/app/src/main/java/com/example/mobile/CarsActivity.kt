@@ -20,6 +20,8 @@ import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 import java.util.Calendar
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 
 class CarsActivity : AppCompatActivity() {
 
@@ -35,6 +37,28 @@ class CarsActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_cars)
+
+        val carsRoot = findViewById<View>(R.id.carsRoot)
+
+        val originalLeftPadding = carsRoot.paddingLeft
+        val originalTopPadding = carsRoot.paddingTop
+        val originalRightPadding = carsRoot.paddingRight
+        val originalBottomPadding = carsRoot.paddingBottom
+
+        ViewCompat.setOnApplyWindowInsetsListener(carsRoot) { view, windowInsets ->
+            val systemBars = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars())
+
+            view.setPadding(
+                originalLeftPadding + systemBars.left,
+                originalTopPadding + systemBars.top,
+                originalRightPadding + systemBars.right,
+                originalBottomPadding + systemBars.bottom
+            )
+
+            windowInsets
+        }
+
+        ViewCompat.requestApplyInsets(carsRoot)
 
         lvCars = findViewById(R.id.lvCars)
         etSearch = findViewById(R.id.etSearch)

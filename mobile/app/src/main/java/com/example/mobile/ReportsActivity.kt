@@ -18,6 +18,8 @@ import retrofit2.Response
 import java.io.File
 import java.io.FileOutputStream
 import java.io.InputStream
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 
 class ReportsActivity : AppCompatActivity() {
 
@@ -29,6 +31,28 @@ class ReportsActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_reports)
+
+        val reportsRoot = findViewById<View>(R.id.reportsRoot)
+
+        val originalLeftPadding = reportsRoot.paddingLeft
+        val originalTopPadding = reportsRoot.paddingTop
+        val originalRightPadding = reportsRoot.paddingRight
+        val originalBottomPadding = reportsRoot.paddingBottom
+
+        ViewCompat.setOnApplyWindowInsetsListener(reportsRoot) { view, windowInsets ->
+            val systemBars = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars())
+
+            view.setPadding(
+                originalLeftPadding + systemBars.left,
+                originalTopPadding + systemBars.top,
+                originalRightPadding + systemBars.right,
+                originalBottomPadding + systemBars.bottom
+            )
+
+            windowInsets
+        }
+
+        ViewCompat.requestApplyInsets(reportsRoot)
 
         val lvReports = findViewById<ListView>(R.id.lvReports)
         val btnBackFromReports = findViewById<Button>(R.id.btnBackFromReports)

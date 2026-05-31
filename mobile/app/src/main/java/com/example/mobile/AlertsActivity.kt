@@ -14,6 +14,8 @@ import androidx.appcompat.app.AppCompatActivity
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 
 class AlertsActivity : AppCompatActivity() {
 
@@ -22,6 +24,28 @@ class AlertsActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_alerts)
+
+        val alertsRoot = findViewById<View>(R.id.alertsRoot)
+
+        val originalLeftPadding = alertsRoot.paddingLeft
+        val originalTopPadding = alertsRoot.paddingTop
+        val originalRightPadding = alertsRoot.paddingRight
+        val originalBottomPadding = alertsRoot.paddingBottom
+
+        ViewCompat.setOnApplyWindowInsetsListener(alertsRoot) { view, windowInsets ->
+            val systemBars = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars())
+
+            view.setPadding(
+                originalLeftPadding + systemBars.left,
+                originalTopPadding + systemBars.top,
+                originalRightPadding + systemBars.right,
+                originalBottomPadding + systemBars.bottom
+            )
+
+            windowInsets
+        }
+
+        ViewCompat.requestApplyInsets(alertsRoot)
 
         val lvAlerts = findViewById<ListView>(R.id.lvAlerts)
         val btnBackFromAlerts = findViewById<Button>(R.id.btnBackFromAlerts)
