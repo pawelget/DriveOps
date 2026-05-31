@@ -73,6 +73,37 @@ data class ServiceRecord(
     val samochod: ServiceCar?
 )
 
+data class ServiceTaskRequest(
+    val nazwa_zadania: String,
+    val opis: String?,
+    val koszt_robocizny: Double
+)
+
+data class UsedPartRequest(
+    val nazwa_czesci: String,
+    val producent_czesci: String?,
+    val ilosc: Double,
+    val cena_jednostkowa: Double
+)
+
+data class ServiceRequest(
+    val samochod_id: Int,
+    val rodzaj_serwisu_id: Int?,
+    val data_serwisu: String,
+    val nazwa_warsztatu: String?,
+    val adres_warsztatu: String?,
+    val przebieg_przy_serwisie: Int?,
+    val opis: String?,
+    val status: String,
+    val zadania: List<ServiceTaskRequest>,
+    val uzyte_czesci: List<UsedPartRequest>
+)
+
+data class ServiceTypeOption(
+    val id: Int,
+    val nazwa: String?
+)
+
 // Modele alertów.
 data class Alert(
     val id: String,
@@ -116,6 +147,17 @@ interface AuthApiService {
     fun getServices(
         @Header("Authorization") token: String
     ): Call<List<ServiceRecord>>
+
+    @GET("/rodzaje-serwisu")
+    fun getServiceTypes(
+        @Header("Authorization") token: String
+    ): Call<List<ServiceTypeOption>>
+
+    @POST("/wpisy-serwisowe")
+    fun createService(
+        @Header("Authorization") token: String,
+        @Body request: ServiceRequest
+    ): Call<ResponseBody>
 
     @GET("/alerts")
     fun getAlerts(

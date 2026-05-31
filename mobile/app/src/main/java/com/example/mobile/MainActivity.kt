@@ -57,7 +57,6 @@ class MainActivity : AppCompatActivity() {
                         tvStatus.text = "Zalogowano pomyślnie!"
                         tvStatus.setTextColor(android.graphics.Color.GREEN)
 
-                        Toast.makeText(this@MainActivity, "Mamy token: $authToken", Toast.LENGTH_SHORT).show()
 
                         val intent = android.content.Intent(this@MainActivity, CarsActivity::class.java)
                         startActivity(intent)

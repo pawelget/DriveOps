@@ -1,0 +1,260 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:fillViewport="true"
+    android:padding="18dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingBottom="12dp">
+
+        <!-- ========================= -->
+        <!-- Dane podstawowe serwisu  -->
+        <!-- ========================= -->
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Pojazd *"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textColor="#333333"
+            android:layout_marginTop="4dp"
+            android:layout_marginBottom="4dp" />
+
+        <Spinner
+            android:id="@+id/spServiceCar"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:background="#F2F2F2"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Rodzaj serwisu"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textColor="#333333"
+            android:layout_marginTop="14dp"
+            android:layout_marginBottom="4dp" />
+
+        <Spinner
+            android:id="@+id/spServiceType"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:background="#F2F2F2"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Status"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textColor="#333333"
+            android:layout_marginTop="14dp"
+            android:layout_marginBottom="4dp" />
+
+        <Spinner
+            android:id="@+id/spServiceStatus"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:background="#F2F2F2"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Data serwisu *"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textColor="#333333"
+            android:layout_marginTop="14dp"
+            android:layout_marginBottom="4dp" />
+
+        <EditText
+            android:id="@+id/etServiceDate"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="RRRR-MM-DD, np. 2026-05-31"
+            android:inputType="date"
+            android:padding="10dp"
+            android:background="#F2F2F2" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Nazwa warsztatu"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textColor="#333333"
+            android:layout_marginTop="14dp"
+            android:layout_marginBottom="4dp" />
+
+        <EditText
+            android:id="@+id/etServiceWorkshop"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="np. Auto Serwis Warszawa"
+            android:inputType="textCapWords"
+            android:padding="10dp"
+            android:background="#F2F2F2" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Adres warsztatu"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textColor="#333333"
+            android:layout_marginTop="14dp"
+            android:layout_marginBottom="4dp" />
+
+        <EditText
+            android:id="@+id/etServiceAddress"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="np. ul. Przykładowa 12, Warszawa"
+            android:inputType="textPostalAddress"
+            android:padding="10dp"
+            android:background="#F2F2F2" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Przebieg przy serwisie [km]"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textColor="#333333"
+            android:layout_marginTop="14dp"
+            android:layout_marginBottom="4dp" />
+
+        <EditText
+            android:id="@+id/etServiceMileage"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="np. 125000"
+            android:inputType="number"
+            android:padding="10dp"
+            android:background="#F2F2F2" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Opis serwisu"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textColor="#333333"
+            android:layout_marginTop="14dp"
+            android:layout_marginBottom="4dp" />
+
+        <EditText
+            android:id="@+id/etServiceDescription"
+            android:layout_width="match_parent"
+            android:layout_height="96dp"
+            android:gravity="top|start"
+            android:hint="Dodatkowe informacje dotyczące wykonanej usługi"
+            android:inputType="textMultiLine"
+            android:minLines="3"
+            android:padding="10dp"
+            android:background="#F2F2F2" />
+
+        <!-- ========================= -->
+        <!-- Wykonane czynności       -->
+        <!-- ========================= -->
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Wykonane czynności"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="#222222"
+            android:layout_marginTop="24dp"
+            android:layout_marginBottom="4dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Dodaj wykonane prace oraz koszt robocizny."
+            android:textSize="13sp"
+            android:textColor="#666666"
+            android:layout_marginBottom="8dp" />
+
+        <!--
+            Do tego kontenera ServicesActivity dynamicznie dodaje
+            wiersze czynności: nazwę, opis oraz koszt robocizny.
+        -->
+        <LinearLayout
+            android:id="@+id/taskContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical" />
+
+        <Button
+            android:id="@+id/btnAddTask"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Dodaj kolejną czynność"
+            android:textAllCaps="false"
+            android:layout_marginTop="8dp" />
+
+        <!-- ========================= -->
+        <!-- Użyte części             -->
+        <!-- ========================= -->
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Wymienione części"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="#222222"
+            android:layout_marginTop="24dp"
+            android:layout_marginBottom="4dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Sekcja opcjonalna. Dodaj części użyte podczas naprawy lub przeglądu."
+            android:textSize="13sp"
+            android:textColor="#666666"
+            android:layout_marginBottom="8dp" />
+
+        <!--
+            Do tego kontenera ServicesActivity dynamicznie dodaje
+            wiersze części: nazwę, producenta, ilość oraz cenę.
+        -->
+        <LinearLayout
+            android:id="@+id/partContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical" />
+
+        <Button
+            android:id="@+id/btnAddPart"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Dodaj część"
+            android:textAllCaps="false"
+            android:layout_marginTop="8dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="* pola wymagane"
+            android:textSize="12sp"
+            android:textColor="#777777"
+            android:layout_marginTop="22dp" />
+
+    </LinearLayout>
+
+</ScrollView>
