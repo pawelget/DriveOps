@@ -1,13 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
+
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:padding="18dp">
+    android:background="#1E1E24"
+    android:fillViewport="true"
+    android:padding="20dp">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical">
+        android:orientation="vertical"
+        android:paddingBottom="12dp">
 
         <TextView
             style="@style/CarFormLabel"
@@ -57,7 +61,7 @@
         <EditText
             android:id="@+id/etEditYear"
             style="@style/CarFormInput"
-            android:hint="np. 2020"
+            android:hint="np. 2021"
             android:inputType="number" />
 
         <TextView
@@ -67,7 +71,7 @@
         <EditText
             android:id="@+id/etEditCapacity"
             style="@style/CarFormInput"
-            android:hint="np. 1598"
+            android:hint="np. 1998"
             android:inputType="number" />
 
         <TextView
@@ -97,7 +101,7 @@
         <EditText
             android:id="@+id/etEditMileage"
             style="@style/CarFormInput"
-            android:hint="np. 120000"
+            android:hint="np. 125000"
             android:inputType="number" />
 
         <TextView
@@ -113,10 +117,10 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
             android:text="* pola wymagane"
-            android:textColor="#777777"
-            android:textSize="12sp"
-            android:layout_marginTop="6dp" />
+            android:textColor="#A0A0A0"
+            android:textSize="12sp" />
 
     </LinearLayout>
 

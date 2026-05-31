@@ -3,8 +3,9 @@
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:background="#1E1E24"
     android:fillViewport="true"
-    android:padding="18dp">
+    android:padding="20dp">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -22,7 +23,7 @@
             android:text="Pojazd *"
             android:textSize="14sp"
             android:textStyle="bold"
-            android:textColor="#333333"
+            android:textColor="#FFFFFF"
             android:layout_marginTop="4dp"
             android:layout_marginBottom="4dp" />
 
@@ -30,9 +31,12 @@
             android:id="@+id/spServiceCar"
             android:layout_width="match_parent"
             android:layout_height="48dp"
-            android:background="#F2F2F2"
+            android:background="#2A292F"
+            android:textColor="#FFFFFF"
+            android:textColorHint="#8D8D94"
             android:paddingStart="8dp"
-            android:paddingEnd="8dp" />
+            android:paddingEnd="8dp"
+            />
 
         <TextView
             android:layout_width="match_parent"
@@ -40,7 +44,7 @@
             android:text="Rodzaj serwisu"
             android:textSize="14sp"
             android:textStyle="bold"
-            android:textColor="#333333"
+            android:textColor="#FFFFFF"
             android:layout_marginTop="14dp"
             android:layout_marginBottom="4dp" />
 
@@ -48,7 +52,9 @@
             android:id="@+id/spServiceType"
             android:layout_width="match_parent"
             android:layout_height="48dp"
-            android:background="#F2F2F2"
+            android:background="#2A292F"
+            android:textColor="#FFFFFF"
+            android:textColorHint="#8D8D94"
             android:paddingStart="8dp"
             android:paddingEnd="8dp" />
 
@@ -58,7 +64,7 @@
             android:text="Status"
             android:textSize="14sp"
             android:textStyle="bold"
-            android:textColor="#333333"
+            android:textColor="#FFFFFF"
             android:layout_marginTop="14dp"
             android:layout_marginBottom="4dp" />
 
@@ -66,7 +72,9 @@
             android:id="@+id/spServiceStatus"
             android:layout_width="match_parent"
             android:layout_height="48dp"
-            android:background="#F2F2F2"
+            android:background="#2A292F"
+            android:textColor="#FFFFFF"
+            android:textColorHint="#8D8D94"
             android:paddingStart="8dp"
             android:paddingEnd="8dp" />
 
@@ -76,7 +84,7 @@
             android:text="Data serwisu *"
             android:textSize="14sp"
             android:textStyle="bold"
-            android:textColor="#333333"
+            android:textColor="#FFFFFF"
             android:layout_marginTop="14dp"
             android:layout_marginBottom="4dp" />
 
@@ -87,7 +95,9 @@
             android:hint="RRRR-MM-DD, np. 2026-05-31"
             android:inputType="date"
             android:padding="10dp"
-            android:background="#F2F2F2" />
+            android:background="#2A292F"
+            android:textColor="#FFFFFF"
+            android:textColorHint="#8D8D94" />
 
         <TextView
             android:layout_width="match_parent"
@@ -95,7 +105,7 @@
             android:text="Nazwa warsztatu"
             android:textSize="14sp"
             android:textStyle="bold"
-            android:textColor="#333333"
+            android:textColor="#FFFFFF"
             android:layout_marginTop="14dp"
             android:layout_marginBottom="4dp" />
 
@@ -106,7 +116,9 @@
             android:hint="np. Auto Serwis Warszawa"
             android:inputType="textCapWords"
             android:padding="10dp"
-            android:background="#F2F2F2" />
+            android:background="#2A292F"
+            android:textColor="#FFFFFF"
+            android:textColorHint="#8D8D94" />
 
         <TextView
             android:layout_width="match_parent"
@@ -114,7 +126,7 @@
             android:text="Adres warsztatu"
             android:textSize="14sp"
             android:textStyle="bold"
-            android:textColor="#333333"
+            android:textColor="#FFFFFF"
             android:layout_marginTop="14dp"
             android:layout_marginBottom="4dp" />
 
@@ -125,7 +137,9 @@
             android:hint="np. ul. Przykładowa 12, Warszawa"
             android:inputType="textPostalAddress"
             android:padding="10dp"
-            android:background="#F2F2F2" />
+            android:background="#2A292F"
+            android:textColor="#FFFFFF"
+            android:textColorHint="#8D8D94" />
 
         <TextView
             android:layout_width="match_parent"
@@ -133,7 +147,7 @@
             android:text="Przebieg przy serwisie [km]"
             android:textSize="14sp"
             android:textStyle="bold"
-            android:textColor="#333333"
+            android:textColor="#FFFFFF"
             android:layout_marginTop="14dp"
             android:layout_marginBottom="4dp" />
 
@@ -144,7 +158,9 @@
             android:hint="np. 125000"
             android:inputType="number"
             android:padding="10dp"
-            android:background="#F2F2F2" />
+            android:background="#2A292F"
+            android:textColor="#FFFFFF"
+            android:textColorHint="#8D8D94" />
 
         <TextView
             android:layout_width="match_parent"
@@ -152,7 +168,7 @@
             android:text="Opis serwisu"
             android:textSize="14sp"
             android:textStyle="bold"
-            android:textColor="#333333"
+            android:textColor="#FFFFFF"
             android:layout_marginTop="14dp"
             android:layout_marginBottom="4dp" />
 
@@ -165,7 +181,9 @@
             android:inputType="textMultiLine"
             android:minLines="3"
             android:padding="10dp"
-            android:background="#F2F2F2" />
+            android:background="#2A292F"
+            android:textColor="#FFFFFF"
+            android:textColorHint="#8D8D94" />
 
         <!-- ========================= -->
         <!-- Wykonane czynności       -->
@@ -177,7 +195,7 @@
             android:text="Wykonane czynności"
             android:textSize="18sp"
             android:textStyle="bold"
-            android:textColor="#222222"
+            android:textColor="#FFFFFF"
             android:layout_marginTop="24dp"
             android:layout_marginBottom="4dp" />
 
@@ -186,7 +204,7 @@
             android:layout_height="wrap_content"
             android:text="Dodaj wykonane prace oraz koszt robocizny."
             android:textSize="13sp"
-            android:textColor="#666666"
+            android:textColor="#A0A0A0"
             android:layout_marginBottom="8dp" />
 
         <!--
@@ -217,7 +235,7 @@
             android:text="Wymienione części"
             android:textSize="18sp"
             android:textStyle="bold"
-            android:textColor="#222222"
+            android:textColor="#FFFFFF"
             android:layout_marginTop="24dp"
             android:layout_marginBottom="4dp" />
 
@@ -226,7 +244,7 @@
             android:layout_height="wrap_content"
             android:text="Sekcja opcjonalna. Dodaj części użyte podczas naprawy lub przeglądu."
             android:textSize="13sp"
-            android:textColor="#666666"
+            android:textColor="#A0A0A0"
             android:layout_marginBottom="8dp" />
 
         <!--

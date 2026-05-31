@@ -340,6 +340,17 @@ class CarsActivity : AppCompatActivity() {
         }
 
         dialog.show()
+        dialog.window?.setBackgroundDrawable(
+            android.graphics.drawable.ColorDrawable(
+                android.graphics.Color.parseColor("#1E1E24")
+            )
+        )
+
+        dialog.getButton(AlertDialog.BUTTON_POSITIVE)
+            .setTextColor(android.graphics.Color.parseColor("#B69CFF"))
+
+        dialog.getButton(AlertDialog.BUTTON_NEGATIVE)
+            .setTextColor(android.graphics.Color.parseColor("#B69CFF"))
     }
 
     private fun createCar(
