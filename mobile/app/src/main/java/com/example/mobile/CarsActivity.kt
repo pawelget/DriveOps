@@ -45,6 +45,11 @@ class CarsActivity : AppCompatActivity() {
             val intent = android.content.Intent(this@CarsActivity, AlertsActivity::class.java)
             startActivity(intent)
         }
+        val btnToReports = findViewById<Button>(R.id.btnToReports)
+        btnToReports.setOnClickListener {
+            val intent = android.content.Intent(this@CarsActivity, ReportsActivity::class.java)
+            startActivity(intent)
+        }
 
         // --- Logika wylogowania ---
         btnLogout.setOnClickListener {

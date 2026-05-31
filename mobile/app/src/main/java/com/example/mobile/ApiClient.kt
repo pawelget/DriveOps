@@ -7,6 +7,9 @@ import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
 import retrofit2.http.Header
+import okhttp3.ResponseBody
+import retrofit2.http.DELETE
+import retrofit2.http.Path
 
 // 1. dane wysyłane ( 'email', haslo)
 data class LoginRequest(val email: String, val haslo: String)
@@ -59,6 +62,25 @@ data class Alert(
 data class AlertsResponse(
     val alerts: List<Alert>
 )
+
+
+// Modele dla raportów
+data class ReportCar(val marka: String?, val model: String?, val numer_rejestracyjny: String?)
+data class ReportService(val koszt_calkowity: Double?, val rodzaj_serwisu_nazwa: String?)
+data class ReportRecord(
+    val id: Int,
+    val numer_raportu: String?,
+    val wygenerowano_w: String?,
+    val samochod: ReportCar?,
+    val wpis_serwisowy: ReportService?
+)
+
+// Modele do wysyłki e-mail
+data class EmailRequest(val email: String? = null)
+data class EmailResponse(val message: String?, val error: String?)
+
+
+
 // 3. Nasz Endpoint (odpowiednik AuthApi.jsx)
 interface AuthApiService {
     @POST("/auth/login")
@@ -73,6 +95,19 @@ interface AuthApiService {
 
     @GET("/alerts")
     fun getAlerts(@Header("Authorization") token: String): Call<AlertsResponse>
+
+    @GET("/raporty")
+    fun getReports(@Header("Authorization") token: String): Call<List<ReportRecord>>
+
+    @DELETE("/raporty/{id}")
+    fun deleteReport(@Header("Authorization") token: String, @Path("id") reportId: Int): Call<Void>
+
+    @GET("/raporty/{id}/pdf")
+    fun downloadReportPdf(@Header("Authorization") token: String, @Path("id") reportId: Int): Call<ResponseBody>
+
+    @POST("/raporty/{id}/wyslij-email")
+    fun sendReportEmail(@Header("Authorization") token: String, @Path("id") reportId: Int, @Body request: EmailRequest): Call<EmailResponse>
+
 }
 
 
