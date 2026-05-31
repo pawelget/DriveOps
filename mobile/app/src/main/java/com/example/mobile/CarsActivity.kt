@@ -64,6 +64,11 @@ class CarsActivity : AppCompatActivity() {
             val intent = Intent(this@CarsActivity, AlertsActivity::class.java)
             startActivity(intent)
         }
+        val btnToReports = findViewById<Button>(R.id.btnToReports)
+        btnToReports.setOnClickListener {
+            val intent = android.content.Intent(this@CarsActivity, ReportsActivity::class.java)
+            startActivity(intent)
+        }
 
         btnLogout.setOnClickListener {
             MainActivity.authToken = null
