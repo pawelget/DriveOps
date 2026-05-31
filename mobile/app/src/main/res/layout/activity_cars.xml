@@ -30,8 +30,18 @@
     <ListView
         android:id="@+id/lvCars"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
         android:divider="@android:color/transparent"
         android:dividerHeight="12dp"/>
+
+    <Button
+        android:id="@+id/btnLogout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:backgroundTint="#1E1E24"
+        android:textColor="#9B7EDE"
+        android:text="Wyloguj się"
+        android:layout_marginTop="12dp"/>
 
 </LinearLayout>

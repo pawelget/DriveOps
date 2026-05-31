@@ -15,7 +15,7 @@ import androidx.appcompat.app.AppCompatActivity
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
-
+import android.widget.Button
 class CarsActivity : AppCompatActivity() {
 
     private var allCars: List<Car> = listOf() // Tu trzymamy wszystkie auta
@@ -27,11 +27,26 @@ class CarsActivity : AppCompatActivity() {
 
         val lvCars = findViewById<ListView>(R.id.lvCars)
         val etSearch = findViewById<EditText>(R.id.etSearch)
+        // Znajdujemy nasz nowy przycisk
+        val btnLogout = findViewById<Button>(R.id.btnLogout)
 
         val token = MainActivity.authToken
         if (token == null) {
             Toast.makeText(this, "Brak tokenu!", Toast.LENGTH_SHORT).show()
             return
+        }
+
+        // --- Logika wylogowania ---
+        btnLogout.setOnClickListener {
+            // 1. Kasujemy token z pamięci
+            MainActivity.authToken = null
+
+            // 2. Tworzymy bilet powrotny do ekranu logowania
+            val intent = android.content.Intent(this@CarsActivity, MainActivity::class.java)
+            startActivity(intent)
+
+            // 3. Zamykamy obecny ekran z listą pojazdów
+            finish()
         }
 
         // --- Logika wyszukiwarki ---
