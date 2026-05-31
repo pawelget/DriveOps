@@ -10,6 +10,7 @@ import retrofit2.http.Header
 import retrofit2.http.POST
 import retrofit2.http.PUT
 import retrofit2.http.Path
+import retrofit2.http.DELETE
 
 // Dane wysyłane podczas logowania.
 data class LoginRequest(
@@ -179,9 +180,6 @@ interface AuthApiService {
     ): Call<ResponseBody>
 
     @GET("/alerts")
-    fun getAlerts(
-        @Header("Authorization") token: String
-    ): Call<AlertsResponse>
     fun getAlerts(@Header("Authorization") token: String): Call<AlertsResponse>
 
     @GET("/raporty")
